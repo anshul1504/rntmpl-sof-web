@@ -56,6 +56,23 @@ def has_capability(request, capability):
     return '*' in allowed or capability in allowed
 
 
+def user_has_tenant_capability(user, tenant, capability):
+    """Check a capability against an explicit tenant for API/service writes."""
+    if not user or not user.is_authenticated or not tenant:
+        return False
+    if user.is_superuser:
+        return True
+    membership = (
+        UserTenant.objects.select_related('role')
+        .filter(user=user, tenant=tenant, is_active=True, tenant__is_deleted=False)
+        .first()
+    )
+    if not membership or not membership.role:
+        return False
+    allowed = ROLE_CAPABILITIES.get(membership.role.code, set())
+    return '*' in allowed or capability in allowed
+
+
 def require_capability(request, capability):
     if not has_capability(request, capability):
         raise PermissionDenied('Your assigned organization role does not allow this action.')

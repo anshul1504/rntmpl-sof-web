@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 from rest_framework.test import APIClient
 
-from apps.accounts.models import Tenant, User, UserTenant
+from apps.accounts.models import Role, Tenant, User, UserTenant
 from apps.players.models import (
     PlayerProfile,
     PlayerBattingSkill,
@@ -60,7 +60,12 @@ class CricketDomainApiTests(TestCase):
         self.user = User.objects.create_user(email='viewer@example.com', password='strong-test-password')
         self.tenant = Tenant.objects.create(name='RNT MPL', tenant_type=Tenant.TenantType.LEAGUE)
         self.other_tenant = Tenant.objects.create(name='Other League', tenant_type=Tenant.TenantType.LEAGUE)
-        UserTenant.objects.create(user=self.user, tenant=self.tenant, is_primary=True)
+        self.admin_role = Role.objects.create(
+            tenant=self.tenant, name='Tenant Admin', code='TENANT_ADMIN'
+        )
+        UserTenant.objects.create(
+            user=self.user, tenant=self.tenant, role=self.admin_role, is_primary=True
+        )
         self.client.force_authenticate(self.user)
 
     def test_player_team_and_tournament_lists_return_data(self):
@@ -213,6 +218,39 @@ class CricketDomainApiTests(TestCase):
         self.assertEqual(response.status_code, 403)
         player.refresh_from_db()
         self.assertEqual(player.tenant, self.tenant)
+
+    def test_viewer_cannot_write_organizer_resources(self):
+        viewer = User.objects.create_user(
+            email='readonly@example.com', password='strong-test-password'
+        )
+        viewer_role = Role.objects.create(
+            tenant=self.tenant, name='Viewer', code='VIEWER'
+        )
+        UserTenant.objects.create(
+            user=viewer, tenant=self.tenant, role=viewer_role, is_primary=True
+        )
+        self.client.force_authenticate(viewer)
+
+        response = self.client.post(
+            reverse('api-v1:player-list'),
+            {'tenant': self.tenant.id, 'first_name': 'Blocked Viewer'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(PlayerProfile.objects.filter(first_name='Blocked Viewer').exists())
+
+    def test_inactive_membership_cannot_write(self):
+        UserTenant.objects.filter(user=self.user, tenant=self.tenant).update(is_active=False)
+
+        response = self.client.post(
+            reverse('api-v1:player-list'),
+            {'tenant': self.tenant.id, 'first_name': 'Inactive Member'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(PlayerProfile.objects.filter(first_name='Inactive Member').exists())
 
     def test_user_can_register_team_in_same_tenant_tournament(self):
         tournament_format = TournamentFormat.objects.create(name='League', code='REG-LG', slug='reg-lg')

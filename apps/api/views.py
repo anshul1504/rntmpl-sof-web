@@ -3,6 +3,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 
 from apps.accounts.models import Tenant, UserTenant
+from apps.accounts.policies import user_has_tenant_capability
 from apps.api.permissions import IsAuthenticatedReadOnly
 from apps.api.serializers import (
     PlayerProfileSerializer,
@@ -107,16 +108,24 @@ def user_can_access_tenant(user, tenant):
 
 
 class TenantOwnedWriteMixin:
-    def perform_create(self, serializer):
-        tenant = serializer.validated_data.get('tenant')
+    required_write_capability = None
+
+    def _authorize_tenant_write(self, tenant):
         if not user_can_access_tenant(self.request.user, tenant):
             raise PermissionDenied('You do not have access to this tenant.')
+        if self.required_write_capability and not user_has_tenant_capability(
+            self.request.user, tenant, self.required_write_capability
+        ):
+            raise PermissionDenied('Your organization role does not allow this action.')
+
+    def perform_create(self, serializer):
+        tenant = serializer.validated_data.get('tenant')
+        self._authorize_tenant_write(tenant)
         serializer.save()
 
     def perform_update(self, serializer):
         tenant = serializer.validated_data.get('tenant', getattr(serializer.instance, 'tenant', None))
-        if not user_can_access_tenant(self.request.user, tenant):
-            raise PermissionDenied('You do not have access to this tenant.')
+        self._authorize_tenant_write(tenant)
         serializer.save()
 
 
@@ -150,6 +159,7 @@ class MyTenantMembershipViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class PlayerProfileViewSet(TenantOwnedWriteMixin, viewsets.ModelViewSet):
+    required_write_capability = 'players.manage'
     serializer_class = PlayerProfileSerializer
     permission_classes = [IsAuthenticated]
     search_fields = ('first_name', 'last_name', 'city', 'state')
@@ -162,6 +172,7 @@ class PlayerProfileViewSet(TenantOwnedWriteMixin, viewsets.ModelViewSet):
 
 
 class TeamViewSet(TenantOwnedWriteMixin, viewsets.ModelViewSet):
+    required_write_capability = 'teams.manage'
     serializer_class = TeamSerializer
     permission_classes = [IsAuthenticated]
     search_fields = ('name', 'code', 'short_name', 'city', 'state')
@@ -175,6 +186,7 @@ class TeamViewSet(TenantOwnedWriteMixin, viewsets.ModelViewSet):
 
 
 class TournamentViewSet(TenantOwnedWriteMixin, viewsets.ModelViewSet):
+    required_write_capability = 'tournaments.manage'
     serializer_class = TournamentSerializer
     permission_classes = [IsAuthenticated]
     search_fields = ('name', 'slug', 'venue', 'city', 'state')
@@ -202,6 +214,10 @@ class TournamentTeamViewSet(viewsets.ModelViewSet):
         tournament = serializer.validated_data.get('tournament')
         if not user_can_access_tenant(self.request.user, tournament.tenant):
             raise PermissionDenied('You do not have access to this tournament tenant.')
+        if not user_has_tenant_capability(
+            self.request.user, tournament.tenant, 'tournaments.manage'
+        ):
+            raise PermissionDenied('Your organization role does not allow this action.')
         serializer.save()
 
     def perform_update(self, serializer):
@@ -211,6 +227,10 @@ class TournamentTeamViewSet(viewsets.ModelViewSet):
         )
         if not user_can_access_tenant(self.request.user, tournament.tenant):
             raise PermissionDenied('You do not have access to this tournament tenant.')
+        if not user_has_tenant_capability(
+            self.request.user, tournament.tenant, 'tournaments.manage'
+        ):
+            raise PermissionDenied('Your organization role does not allow this action.')
         serializer.save()
 
 
