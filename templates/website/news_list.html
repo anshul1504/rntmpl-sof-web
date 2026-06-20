@@ -1,0 +1,20 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% block content %}
+<section class="rnt-page-hero has-image" style="background-image:linear-gradient(rgba(0,0,0,.64),rgba(0,0,0,.64)),url('{% if news_page.banner_image %}{{ news_page.banner_image.url }}{% else %}{% static "website/images/cricket-video.jpg" %}{% endif %}')">
+    <p class="rnt-page-kicker">{{ news_page.eyebrow }}</p>
+    <h1>{{ news_page.title }}</h1>
+</section>
+<main class="rnt-news-page">
+    <div class="rnt-news-intro">{{ news_page.description }}</div>
+    <div class="rnt-news-grid">
+        {% for item in news_items %}
+        <article class="rnt-news-card">
+            <div class="rnt-news-image">{% if item.featured_image %}<img loading="lazy" decoding="async" src="{{ item.featured_image.url }}" alt="{{ item.title }}">{% else %}<img loading="lazy" decoding="async" src="{% static 'website/images/blog6.jpg' %}" alt="{{ item.title }}">{% endif %}<time>{{ item.published_at|date:"d M Y" }}</time></div>
+            <div class="rnt-news-body"><span>RNTMPL News</span><h2>{{ item.title }}</h2><p>{{ item.excerpt|default:item.content|striptags|truncatechars:180 }}</p></div>
+        </article>
+        {% empty %}<div class="rnt-event-empty"><i class="feather-icon icon-bell"></i><h3>{{ news_page.empty_title }}</h3></div>{% endfor %}
+    </div>
+    {% if is_paginated %}<nav class="rnt-blog-pagination">{% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}"><i class="feather-icon icon-chevron-left"></i></a>{% endif %}{% for number in paginator.page_range %}{% if number == page_obj.number %}<span class="current">{{ number }}</span>{% else %}<a href="?page={{ number }}">{{ number }}</a>{% endif %}{% endfor %}{% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}"><i class="feather-icon icon-chevron-right"></i></a>{% endif %}</nav>{% endif %}
+</main>
+{% endblock %}

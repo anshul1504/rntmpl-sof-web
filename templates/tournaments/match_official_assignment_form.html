@@ -1,0 +1,9 @@
+{% extends "accounts/base.html" %}
+{% block title %}Assign Match Official{% endblock %}
+{% block content %}
+<h2 class="fw-bold">Assign Match Official</h2><p class="text-secondary">{{ match.home_team.team.name }} vs {{ match.away_team.team.name }}</p>
+<div class="card border-0 shadow-sm"><div class="card-body p-4">
+<form method="post">{% csrf_token %}{{ form.as_p }}<button class="btn btn-primary">Assign</button>
+<a href="{% url 'tournaments:match-setup' match.pk %}" class="btn btn-outline-secondary">Cancel</a></form>
+</div></div>
+{% endblock %}

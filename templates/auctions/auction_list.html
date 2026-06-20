@@ -1,0 +1,6 @@
+{% extends "accounts/base.html" %}
+{% block title %}Player Auctions{% endblock %}
+{% block content %}
+<div class="mb-4"><h2 class="fw-bold mb-1">Player Auctions</h2><p class="text-secondary">Franchise purse, player lots and live bidding rooms.</p></div>
+<div class="row g-3">{% for auction in auctions %}<div class="col-lg-6"><a href="{% url 'auctions:auction-detail' auction.pk %}" class="card shadow-sm text-decoration-none"><div class="card-body"><div class="d-flex justify-content-between"><h5 class="fw-bold">{{ auction.name }}</h5><span class="badge bg-primary-subtle text-primary">{{ auction.get_lifecycle_display }}</span></div><p class="text-secondary small mb-0">{{ auction.tournament.name }} · {{ auction.lots.count }} player lots</p></div></a></div>{% empty %}<div class="col-12"><div class="card"><div class="card-body py-5 text-center text-secondary">Create an auction from a tournament dashboard.</div></div></div>{% endfor %}</div>
+{% endblock %}

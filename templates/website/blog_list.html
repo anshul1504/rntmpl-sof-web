@@ -1,0 +1,39 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% block content %}
+<section class="rnt-page-hero has-image" style="background-image:linear-gradient(rgba(0,0,0,.66),rgba(0,0,0,.66)),url('{% if blog_settings.listing_banner_image %}{{ blog_settings.listing_banner_image.url }}{% else %}{% static "website/images/cricket-video.jpg" %}{% endif %}')">
+    <p class="rnt-page-kicker">{{ blog_settings.eyebrow }}</p>
+    <h1>{{ blog_settings.listing_title }}</h1>
+</section>
+<section class="rnt-blog-page">
+    <div class="rnt-blog-container">
+        <div class="rnt-blog-grid">
+            {% for post in posts %}
+                <article class="rnt-blog-card rnt-clickable-card" tabindex="0" role="link" data-href="{% url 'publicsite:blog-detail' post.slug %}">
+                    <div class="rnt-blog-image">
+                        {% if post.featured_image %}<img loading="lazy" decoding="async" src="{{ post.featured_image.url }}" alt="{{ post.title }}">{% else %}<img loading="lazy" decoding="async" src="{% static 'website/images/blog6.jpg' %}" alt="{{ post.title }}">{% endif %}
+                        <span>{{ blog_settings.card_badge_text }}</span>
+                    </div>
+                    <div class="rnt-blog-body">
+                        <div class="rnt-blog-meta"><i class="feather-icon icon-calendar"></i>{{ post.published_at|date:"d M Y" }}</div>
+                        <h3>{{ post.title }}</h3>
+                        <p>{{ post.excerpt|default:post.content|striptags|truncatechars:150 }}</p>
+                        <a href="{% url 'publicsite:blog-detail' post.slug %}" class="rnt-blog-read">{{ blog_settings.read_more_text }} <i class="feather-icon icon-arrow-up-right"></i></a>
+                    </div>
+                </article>
+            {% empty %}
+                <div class="rnt-blog-empty"><h3>{{ blog_settings.empty_title }}</h3></div>
+            {% endfor %}
+        </div>
+        {% if is_paginated %}
+            <nav class="rnt-blog-pagination" aria-label="Blog pagination">
+                {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}"><i class="feather-icon icon-chevron-left"></i></a>{% endif %}
+                {% for number in paginator.page_range %}
+                    {% if number == page_obj.number %}<span class="current">{{ number }}</span>{% else %}<a href="?page={{ number }}">{{ number }}</a>{% endif %}
+                {% endfor %}
+                {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}"><i class="feather-icon icon-chevron-right"></i></a>{% endif %}
+            </nav>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Welcome to {{ platform_name }}</title>
+    <style>
+        body { 
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background-color: #0c0c0c; 
+            color: #ffffff; 
+            margin: 0; 
+            padding: 0; 
+        }
+        .container { 
+            max-width: 550px; 
+            margin: 40px auto; 
+            background-color: #121212; 
+            border-radius: 0; 
+            border: 1px solid rgba(212, 175, 55, 0.25); 
+            overflow: hidden; 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); 
+        }
+        .header { 
+            background-color: #0c0c0c; 
+            padding: 30px; 
+            text-align: center; 
+            border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+        }
+        .header img {
+            max-height: 100px;
+            width: auto;
+            object-fit: contain;
+            border-radius: 0;
+        }
+        .content { 
+            padding: 35px 30px; 
+            line-height: 1.6; 
+            color: #e0e0e0;
+        }
+        .content h2 {
+            font-family: 'Poppins', -apple-system, sans-serif;
+            color: #d4af37;
+            margin-top: 0;
+            font-weight: 500;
+            font-size: 24px;
+            text-align: center;
+        }
+        .welcome-badge {
+            background: linear-gradient(135deg, #ffd700 0%, #d4af37 100%);
+            color: #0c0c0c;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 0;
+            margin-bottom: 20px;
+        }
+        .intro-box { 
+            background-color: rgba(212, 175, 55, 0.03); 
+            border: 1px solid rgba(212, 175, 55, 0.15); 
+            border-radius: 0; 
+            padding: 20px; 
+            margin: 24px 0; 
+        }
+        .footer { 
+            text-align: center; 
+            color: #888888; 
+            font-size: 12px; 
+            padding: 24px; 
+            background-color: #0c0c0c; 
+            border-top: 1px solid rgba(212, 175, 55, 0.15); 
+        }
+        .footer p { 
+            margin: 6px 0; 
+        }
+        .footer a {
+            color: #d4af37;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="cid:logo" alt="RNT MPL Logo">
+        </div>
+        <div class="content" style="text-align: center;">
+            <span class="welcome-badge">Account Verified</span>
+            <h2>Welcome to RNT MPL!</h2>
+            <p style="text-align: left;">Hello {{ full_name }},</p>
+            <p style="text-align: left;">We are thrilled to welcome you to the <strong>RNT MPL Cricket Platform</strong>! Your email address has been successfully verified, and your account is active.</p>
+            
+            <div class="intro-box" style="text-align: left;">
+                 <p style="margin: 0; font-weight: 500; color: #d4af37; margin-bottom: 8px;">🚀 Ready to explore?</p>
+                <p style="margin: 0; font-size: 14px; color: #cccccc;">Log in to access your dashboard, manage teams, join tournaments, view live matches, and explore our enterprise cricket features.</p>
+            </div>
+            
+            <p style="text-align: left;">If you have any questions or need assistance, feel free to contact our support team.</p>
+            <p style="text-align: left; margin-top: 24px;">Best regards,<br>The RNT MPL Team</p>
+        </div>
+        <div class="footer">
+            <p>This is an automated message, please do not reply to this email.</p>
+            <p>&copy; {% now "Y" %} {{ platform_name }}. All rights reserved.</p>
+            <p style="margin-top: 12px; font-size: 11px;">
+                Designed & Developed by <a href="https://www.thewebfix.in" target="_blank">The Webfix</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

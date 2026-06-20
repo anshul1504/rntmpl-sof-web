@@ -1,0 +1,288 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Authenticate - RNT MPL{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+    <!-- Bootstrap 5 & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Google Fonts: Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            border-radius: 0 !important;
+        }
+        :root {
+            --primary-gradient: linear-gradient(135deg, #ffd700 0%, #d4af37 100%);
+            --gold-primary: #d4af37;
+            --gold-dark: #b8860b;
+            --gold-light: #f5e6c8;
+            --dark-bg: #0c0c0c;
+            --overlay-color: rgba(10, 10, 10, 0.86);
+            --card-radius: 0px;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(var(--overlay-color), var(--overlay-color)), 
+                        url('https://static0.makeuseofimages.com/wordpress/wp-content/uploads/2024/06/a-cricketer-hitting-a-ball-with-their-bat.jpg?w=1600&h=900&fit=crop') no-repeat center center fixed;
+            background-size: cover;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 24px;
+        }
+
+        /* Set Poppins for headings, Poppins for text, lower boldness */
+        h1, h2, h3, h4, h5, h6, .brand-font {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+        }
+
+        .auth-card-container {
+            width: 100%;
+            max-width: 460px;
+        }
+
+        .auth-card {
+            background: #ffffff;
+            border-radius: var(--card-radius);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05);
+            padding: 2.5rem 2.25rem;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            position: relative;
+        }
+
+        .auth-logo {
+            max-height: 110px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+            border-radius: 12px;
+        }
+
+        /* Form elements styling - reduced boldness */
+        .form-label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #333333;
+            margin-bottom: 0.4rem;
+        }
+
+        .form-control {
+            border: 1px solid #dcdcdc;
+            border-radius: 8px;
+            padding: 0.65rem 0.9rem;
+            font-size: 0.9rem;
+            transition: all 0.25s ease;
+            background-color: #fafafa;
+            color: #222222;
+            font-weight: 400;
+        }
+
+        .form-control:focus {
+            background-color: #ffffff;
+            border-color: var(--gold-primary);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
+            outline: none;
+        }
+
+        /* Auto-style bare Django-rendered inputs that don't have form-control class */
+        .auth-card input[type="text"],
+        .auth-card input[type="email"],
+        .auth-card input[type="password"],
+        .auth-card input[type="number"],
+        .auth-card input[type="tel"],
+        .auth-card input[type="url"],
+        .auth-card select,
+        .auth-card textarea {
+            display: block;
+            width: 100%;
+            border: 1px solid #dcdcdc;
+            border-radius: 8px;
+            padding: 0.65rem 0.9rem;
+            font-size: 0.9rem;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 400;
+            transition: all 0.25s ease;
+            background-color: #fafafa;
+            color: #222222;
+            box-sizing: border-box;
+            appearance: auto;
+        }
+
+        .auth-card input[type="text"]:focus,
+        .auth-card input[type="email"]:focus,
+        .auth-card input[type="password"]:focus,
+        .auth-card input[type="number"]:focus,
+        .auth-card input[type="tel"]:focus,
+        .auth-card input[type="url"]:focus,
+        .auth-card select:focus,
+        .auth-card textarea:focus {
+            background-color: #ffffff;
+            border-color: var(--gold-primary);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
+            outline: none;
+        }
+
+        .btn-primary-custom {
+            background: var(--primary-gradient);
+            border: none;
+            color: #0c0c0c;
+            padding: 0.65rem 1.25rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        .btn-primary-custom:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 15px rgba(212, 175, 55, 0.3);
+            color: #000000;
+        }
+
+        .btn-primary-custom:active {
+            transform: translateY(0);
+        }
+
+        .btn-outline-custom {
+            border: 1.5px solid #dcdcdc;
+            background: transparent;
+            color: #333333;
+            padding: 0.65rem 1.25rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-outline-custom:hover {
+            background-color: #0c0c0c;
+            border-color: #0c0c0c;
+            color: var(--gold-primary);
+        }
+
+        /* Links and Helpers */
+        .auth-link {
+            color: var(--gold-dark);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .auth-link:hover {
+            color: #000000;
+            text-decoration: underline;
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 350px;
+            width: 100%;
+        }
+
+        .msg-toast {
+            border-radius: 8px;
+            border: none;
+            border-left: 4px solid var(--gold-primary);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            font-size: 0.85rem;
+            padding: 1rem 1.25rem;
+            background-color: #ffffff;
+            color: #222222;
+            transition: all 0.3s ease;
+            opacity: 1;
+            animation: slideIn 0.3s ease forwards;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(120%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .msg-toast.fade-out {
+            transform: translateX(120%);
+            opacity: 0;
+        }
+
+        .msg-toast.alert-success {
+            border-left-color: #2ec4b6;
+        }
+        .msg-toast.alert-danger {
+            border-left-color: #e71d36;
+        }
+        .msg-toast.alert-warning {
+            border-left-color: #ff9f1c;
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+    <!-- Top Right Toast Container -->
+    {% if messages %}
+        <div class="toast-container">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show msg-toast" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="auth-card-container">
+        <div class="auth-card">
+            <!-- Center Logo -->
+            <div class="text-center mb-4">
+                <img src="{% static 'images/logo.png' %}" alt="RNT MPL Logo" class="auth-logo">
+            </div>
+
+            {% block auth_content %}{% endblock %}
+        </div>
+        <div class="text-center mt-3 text-white-50" style="font-size: 0.8rem; font-family: 'Poppins', sans-serif;">
+            Designed & Developed by <a href="https://www.thewebfix.in" target="_blank" style="color: var(--gold-primary); text-decoration: none; font-weight: 500;">The Webfix</a>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Auto Dismiss Toasts script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const alerts = document.querySelectorAll('.msg-toast');
+            alerts.forEach(function(alert) {
+                // Dismiss after 3 seconds (3000ms)
+                setTimeout(function() {
+                    alert.classList.add('fade-out');
+                    setTimeout(function() {
+                        alert.remove();
+                    }, 300); // Wait for transition
+                }, 3000);
+            });
+        });
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

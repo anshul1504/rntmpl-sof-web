@@ -1,0 +1,91 @@
+{% extends "accounts/base.html" %}
+{% block title %}{{ tenant.name }} - RNT MPL{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h3 class="fw-bold mb-1">{{ tenant.name }}</h3>
+        <p class="text-muted mb-0">{{ tenant.get_tenant_type_display }} · {{ tenant.city|default:"No location" }}, {{ tenant.state|default:"" }}</p>
+    </div>
+    <span class="badge bg-success fs-6">{{ tenant.status }}</span>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body p-3">
+                <div class="text-muted small fw-semibold text-uppercase">Players</div>
+                <div class="fs-2 fw-bold">{{ player_count }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body p-3">
+                <div class="text-muted small fw-semibold text-uppercase">Teams</div>
+                <div class="fs-2 fw-bold">{{ team_count }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body p-3">
+                <div class="text-muted small fw-semibold text-uppercase">Tournaments</div>
+                <div class="fs-2 fw-bold">{{ tournament_count }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body p-3">
+                <div class="text-muted small fw-semibold text-uppercase">Members</div>
+                <div class="fs-2 fw-bold">{{ members.count }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-transparent border-0 pt-3 px-3">
+                <h5 class="fw-bold mb-0"><i class="bi bi-info-circle me-2"></i>Details</h5>
+            </div>
+            <div class="card-body p-3">
+                <table class="table table-sm">
+                    <tr><td class="text-muted">Email</td><td>{{ tenant.email|default:"—" }}</td></tr>
+                    <tr><td class="text-muted">Phone</td><td>{{ tenant.phone|default:"—" }}</td></tr>
+                    <tr><td class="text-muted">Domain</td><td>{{ tenant.domain|default:"—" }}</td></tr>
+                    <tr><td class="text-muted">Subdomain</td><td>{{ tenant.subdomain|default:"—" }}</td></tr>
+                    <tr><td class="text-muted">Plan</td><td>{{ tenant.subscription_plan|title }}</td></tr>
+                    <tr><td class="text-muted">Max Users</td><td>{{ tenant.max_users }}</td></tr>
+                    <tr><td class="text-muted">Max Teams</td><td>{{ tenant.max_teams }}</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-transparent border-0 pt-3 px-3">
+                <h5 class="fw-bold mb-0"><i class="bi bi-people me-2"></i>Members</h5>
+            </div>
+            <div class="card-body p-3">
+                {% if members %}
+                <ul class="list-unstyled mb-0">
+                    {% for m in members %}
+                    <li class="py-2 border-bottom d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="fw-medium">{{ m.user.full_name|default:m.user.email }}</span>
+                            <span class="text-muted small ms-2">{{ m.role.name|default:"Member" }}</span>
+                        </div>
+                        {% if m.is_primary %}<span class="badge bg-success">Admin</span>{% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted mb-0">No members found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

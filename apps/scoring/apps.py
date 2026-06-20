@@ -1,0 +1,11 @@
+from django.apps import AppConfig
+
+
+class ScoringConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'apps.scoring'
+    label = 'scoring'
+    verbose_name = 'Live Scoring'
+
+    def ready(self):
+        import apps.scoring.signals  # noqa

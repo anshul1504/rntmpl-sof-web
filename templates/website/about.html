@@ -1,0 +1,55 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% block content %}
+<section class="rnt-page-hero has-image" style="background-image:linear-gradient(rgba(0,0,0,.62),rgba(0,0,0,.72)),url('{% if about_page.banner_image %}{{ about_page.banner_image.url }}{% elif page.about_image %}{{ page.about_image.url }}{% else %}{% static "website/images/cricks1.jpg" %}{% endif %}')">
+    <p class="rnt-page-kicker">{{ about_page.eyebrow }}</p>
+    <h1>{{ about_page.title }}</h1>
+</section>
+<main class="rnt-about-page">
+    <section class="rnt-about-section rnt-about-page-home-block">
+        <div class="rnt-about-visual" style="background-image:url('{% if page.about_image %}{{ page.about_image.url }}{% else %}{% static "website/images/cricks1.jpg" %}{% endif %}')">
+            <span class="rnt-about-ball" aria-hidden="true"></span>
+            <div class="rnt-about-image-label"><strong>RNTMPL</strong><span>Bharat Ka Cricket</span></div>
+        </div>
+        <div class="rnt-about-content">
+            <div class="rnt-about-copy">
+                <p class="rnt-section-kicker">About {{ site.site_name }}</p>
+                <h2>{{ page.about_title }}</h2>
+                <p class="rnt-about-lead">{{ page.about_description }}</p>
+                <p class="rnt-about-support">{{ page.about_support_text }}</p>
+                <div class="rnt-about-points">
+                    <div><i class="feather-icon icon-check-circle"></i><span>{{ page.about_point_one }}</span></div>
+                    <div><i class="feather-icon icon-check-circle"></i><span>{{ page.about_point_two }}</span></div>
+                    <div><i class="feather-icon icon-check-circle"></i><span>{{ page.about_point_three }}</span></div>
+                    <div><i class="feather-icon icon-check-circle"></i><span>{{ page.about_point_four }}</span></div>
+                </div>
+                <div class="rnt-about-actions"><a href="{% url 'publicsite:player-registration' %}" class="btn btn-gr btn-lg">Start Your Journey</a><a href="{% url 'publicsite:team-list' %}" class="rnt-text-link">Explore Teams <i class="feather-icon icon-arrow-up-right"></i></a></div>
+            </div>
+            <div class="rnt-about-stats">
+                <div><strong>{{ team_count }}</strong><span>Active Teams</span></div>
+                <div><strong>{{ player_count }}</strong><span>Players</span></div>
+                <div><strong>{{ event_count }}</strong><span>Events</span></div>
+                <div><strong>04</strong><span>Competitive Pathway</span></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="rnt-about-purpose">
+        <article><i class="feather-icon icon-target"></i><h2>{{ about_page.mission_title }}</h2><p>{{ about_page.mission_content }}</p></article>
+        <article><i class="feather-icon icon-eye"></i><h2>{{ about_page.vision_title }}</h2><p>{{ about_page.vision_content }}</p></article>
+    </section>
+
+    <section class="rnt-about-founder">
+        <div class="rnt-about-founder-image">{% if about_page.founder_image %}<img loading="lazy" decoding="async" src="{{ about_page.founder_image.url }}" alt="{{ about_page.founder_name }}">{% else %}<div><i class="feather-icon icon-user"></i></div>{% endif %}</div>
+        <div><p class="rnt-section-kicker">{{ about_page.founder_eyebrow }}</p><h2>{{ about_page.founder_name }}</h2><span>{{ about_page.founder_designation }}</span><blockquote>{{ about_page.founder_message }}</blockquote>{% if about_page.founder_linkedin_url %}<a href="{{ about_page.founder_linkedin_url }}" target="_blank" rel="noopener">Connect on LinkedIn <i class="feather-icon icon-external-link"></i></a>{% endif %}</div>
+    </section>
+
+    {% if values %}<section class="rnt-about-values"><div class="rnt-partner-section-heading"><p class="rnt-section-kicker">Our Foundation</p><h2>{{ about_page.values_title }}</h2></div><div>{% for value in values %}<article><i class="feather-icon {{ value.icon }}"></i><h3>{{ value.title }}</h3><p>{{ value.description }}</p></article>{% endfor %}</div></section>{% endif %}
+
+    {% if leaders %}<section class="rnt-about-leaders"><div class="rnt-partner-section-heading"><p class="rnt-section-kicker">People</p><h2>{{ about_page.leadership_title }}</h2></div><div>{% for leader in leaders %}<article>{% if leader.image %}<img loading="lazy" decoding="async" src="{{ leader.image.url }}" alt="{{ leader.name }}">{% else %}<div class="rnt-about-leader-placeholder"><i class="feather-icon icon-user"></i></div>{% endif %}<div><h3>{{ leader.name }}</h3><span>{{ leader.designation }}</span>{% if leader.bio %}<p>{{ leader.bio|truncatechars:140 }}</p>{% endif %}{% if leader.linkedin_url %}<a href="{{ leader.linkedin_url }}" target="_blank" rel="noopener">LinkedIn <i class="feather-icon icon-external-link"></i></a>{% endif %}</div></article>{% endfor %}</div></section>{% endif %}
+
+    {% if teams %}<section class="rnt-about-teams"><div class="rnt-partner-section-heading"><p class="rnt-section-kicker">Competition</p><h2>{{ about_page.teams_title }}</h2></div><div>{% for team in teams %}<a href="{% url 'publicsite:team-detail' team.pk %}"><span>{% if team.logo %}<img loading="lazy" decoding="async" src="{{ team.logo.url }}" alt="{{ team.name }}">{% else %}{{ team.abbreviation|default:"RNT" }}{% endif %}</span><h3>{{ team.name }}</h3><p>{{ team.city|default:team.home_ground|default:"India" }}</p></a>{% endfor %}</div><a class="rnt-about-view-all" href="{% url 'publicsite:team-list' %}">View All Teams <i class="feather-icon icon-arrow-up-right"></i></a></section>{% endif %}
+
+    <section class="rnt-about-cta"><div><p class="rnt-section-kicker">Join RNTMPL</p><h2>{{ about_page.cta_title }}</h2><p>{{ about_page.cta_description }}</p></div><a href="{{ about_page.cta_button_url }}">{{ about_page.cta_button_text }}</a></section>
+</main>
+{% endblock %}

@@ -1,0 +1,190 @@
+{% extends "accounts/base.html" %}
+{% load static %}
+{% block title %}Edit Profile - RNT MPL{% endblock %}
+
+{% block content %}
+<!-- Section Header -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <div>
+        <h2 class="fw-bold mb-1">Edit Profile</h2>
+        <p class="text-secondary small mb-0">Update your personal information, contact details, and address.</p>
+    </div>
+    <a href="{% url 'accounts:profile' %}" class="btn btn-outline-secondary px-4 py-2">
+        <i class="bi bi-arrow-left me-1"></i> Back to Profile
+    </a>
+</div>
+
+<form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    <!-- Photo Upload -->
+    <div class="card border border-light-subtle shadow-sm mb-4">
+        <div class="card-header bg-transparent py-3 border-bottom border-light-subtle">
+            <h5 class="fw-bold mb-0"><i class="bi bi-camera me-2 text-primary"></i>Profile Photo</h5>
+        </div>
+        <div class="card-body p-4">
+            <div class="d-flex align-items-center gap-4 flex-wrap">
+                <div class="flex-shrink-0">
+                    {% if form.instance.photo %}
+                        <img src="{{ form.instance.photo.url }}" alt="Current photo" class="border border-secondary-subtle p-1" style="width: 80px; height: 80px; object-fit: cover;">
+                    {% else %}
+                        <div class="d-flex align-items-center justify-content-center text-white fw-bold fs-3 border border-secondary-subtle" style="width: 80px; height: 80px; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;">
+                            {{ form.instance.full_name|slice:":1"|upper|default:"U" }}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="flex-grow-1">
+                    {{ form.photo }}
+                    <small class="text-muted d-block mt-2"><i class="bi bi-info-circle me-1"></i>Recommended: Square image, at least 200×200px. JPG, PNG accepted.</small>
+                    {% if form.photo.errors %}
+                        <div class="text-danger small mt-1">{{ form.photo.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Personal Information -->
+    <div class="card border border-light-subtle shadow-sm mb-4">
+        <div class="card-header bg-transparent py-3 border-bottom border-light-subtle">
+            <h5 class="fw-bold mb-0"><i class="bi bi-person-lines-fill me-2 text-primary"></i>Personal Information</h5>
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3">
+                <!-- Full Name -->
+                <div class="col-md-4">
+                    <label for="{{ form.full_name.id_for_label }}" class="form-label fw-semibold small text-uppercase text-secondary">Full Name <span class="text-danger">*</span></label>
+                    {{ form.full_name }}
+                    {% if form.full_name.errors %}<div class="text-danger small mt-1">{{ form.full_name.errors }}</div>{% endif %}
+                </div>
+                <!-- Username -->
+                <div class="col-md-4">
+                    <label for="{{ form.username.id_for_label }}" class="form-label fw-semibold small text-uppercase text-secondary">Username</label>
+                    {{ form.username }}
+                    {% if form.username.errors %}<div class="text-danger small mt-1">{{ form.username.errors }}</div>{% endif %}
+                </div>
+                <!-- Email (readonly) -->
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold small text-uppercase text-secondary">Email Address</label>
+                    <input type="email" class="form-control" value="{{ form.instance.email }}" readonly disabled style="background-color: rgba(0,0,0,0.03) !important;">
+                    <small class="text-muted"><i class="bi bi-lock me-1"></i>Contact admin to change email</small>
+                </div>
+                <!-- Gender -->
+                <div class="col-md-4">
+                    <label for="{{ form.gender.id_for_label }}" class="form-label fw-semibold small text-uppercase text-secondary">Gender</label>
+                    {{ form.gender }}
+                    {% if form.gender.errors %}<div class="text-danger small mt-1">{{ form.gender.errors }}</div>{% endif %}
+                </div>
+                <!-- Date of Birth -->
+                <div class="col-md-4">
+                    <label for="{{ form.date_of_birth.id_for_label }}" class="form-label fw-semibold small text-uppercase text-secondary">Date of Birth</label>
+                    {{ form.date_of_birth }}
+                    {% if form.date_of_birth.errors %}<div class="text-danger small mt-1">{{ form.date_of_birth.errors }}</div>{% endif %}
+                </div>
+                <!-- Platform Role -->
+                <div class="col-md-4">
+                    <label for="{{ form.user_type.id_for_label }}" class="form-label fw-semibold small text-uppercase text-secondary">Platform Role</label>
+                    {{ form.user_type }}
+                    {% if form.user_type.errors %}<div class="text-danger small mt-1">{{ form.user_type.errors }}</div>{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Information -->
+    <div class="card border border-light-subtle shadow-sm mb-4">
+        <div class="card-header bg-transparent py-3 border-bottom border-light-subtle">
+            <h5 class="fw-bold mb-0"><i class="bi bi-telephone me-2 text-primary"></i>Contact Information</h5>
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3">
+                <!-- Phone -->
+                <div class="col-md-4">
+                    <label for="{{ form.phone.id_for_label }}" class="form-label fw-semibold small text-uppercase text-secondary">Primary Phone</label>
+                    {{ form.phone }}
+                    {% if form.phone.errors %}<div class="text-danger small mt-1">{{ form.phone.errors }}</div>{% endif %}
+                </div>
+                <!-- Alternate Phone -->
+                <div class="col-md-4">
+                    <label for="{{ form.alternate_phone.id_for_label }}" class="form-label fw-semibold small text-uppercase text-secondary">Alternate Phone</label>
+                    {{ form.alternate_phone }}
+                    {% if form.alternate_phone.errors %}<div class="text-danger small mt-1">{{ form.alternate_phone.errors }}</div>{% endif %}
+                </div>
+                <!-- Website -->
+                <div class="col-md-4">
+                    <label for="{{ form.website.id_for_label }}" class="form-label fw-semibold small text-uppercase text-secondary">Website</label>
+                    {{ form.website }}
+                    {% if form.website.errors %}<div class="text-danger small mt-1">{{ form.website.errors }}</div>{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Address Information -->
+    <div class="card border border-light-subtle shadow-sm mb-4">
+        <div class="card-header bg-transparent py-3 border-bottom border-light-subtle">
+            <h5 class="fw-bold mb-0"><i class="bi bi-geo-alt me-2 text-primary"></i>Address Information</h5>
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3">
+                <!-- Address Line 1 -->
+                <div class="col-md-6">
+                    <label for="{{ form.address_line1.id_for_label }}" class="form-label fw-semibold small text-uppercase text-secondary">Address Line 1</label>
+                    {{ form.address_line1 }}
+                    {% if form.address_line1.errors %}<div class="text-danger small mt-1">{{ form.address_line1.errors }}</div>{% endif %}
+                </div>
+                <!-- Address Line 2 -->
+                <div class="col-md-6">
+                    <label for="{{ form.address_line2.id_for_label }}" class="form-label fw-semibold small text-uppercase text-secondary">Address Line 2</label>
+                    {{ form.address_line2 }}
+                    {% if form.address_line2.errors %}<div class="text-danger small mt-1">{{ form.address_line2.errors }}</div>{% endif %}
+                </div>
+                <!-- City -->
+                <div class="col-md-3">
+                    <label for="{{ form.city.id_for_label }}" class="form-label fw-semibold small text-uppercase text-secondary">City</label>
+                    {{ form.city }}
+                    {% if form.city.errors %}<div class="text-danger small mt-1">{{ form.city.errors }}</div>{% endif %}
+                </div>
+                <!-- District -->
+                <div class="col-md-3">
+                    <label for="{{ form.district.id_for_label }}" class="form-label fw-semibold small text-uppercase text-secondary">District</label>
+                    {{ form.district }}
+                    {% if form.district.errors %}<div class="text-danger small mt-1">{{ form.district.errors }}</div>{% endif %}
+                </div>
+                <!-- State -->
+                <div class="col-md-2">
+                    <label for="{{ form.state.id_for_label }}" class="form-label fw-semibold small text-uppercase text-secondary">State</label>
+                    {{ form.state }}
+                    {% if form.state.errors %}<div class="text-danger small mt-1">{{ form.state.errors }}</div>{% endif %}
+                </div>
+                <!-- Pincode -->
+                <div class="col-md-2">
+                    <label for="{{ form.pincode.id_for_label }}" class="form-label fw-semibold small text-uppercase text-secondary">PIN Code</label>
+                    {{ form.pincode }}
+                    {% if form.pincode.errors %}<div class="text-danger small mt-1">{{ form.pincode.errors }}</div>{% endif %}
+                </div>
+                <!-- Country -->
+                <div class="col-md-2">
+                    <label for="{{ form.country.id_for_label }}" class="form-label fw-semibold small text-uppercase text-secondary">Country</label>
+                    {{ form.country }}
+                    {% if form.country.errors %}<div class="text-danger small mt-1">{{ form.country.errors }}</div>{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="card border border-light-subtle shadow-sm mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <a href="{% url 'accounts:profile' %}" class="btn btn-outline-secondary px-4 py-2">
+                    <i class="bi bi-x-lg me-1"></i> Cancel
+                </a>
+                <button type="submit" class="btn btn-primary px-5 py-2 fw-semibold">
+                    <i class="bi bi-check2-circle me-1"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}

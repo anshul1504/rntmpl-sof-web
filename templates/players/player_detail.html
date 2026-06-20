@@ -1,0 +1,526 @@
+{% extends "accounts/base.html" %}
+{% load static %}
+{% block title %}{{ player.full_name }} - Player Profile - RNT MPL{% endblock %}
+
+{% block extra_head %}
+<style>
+    .stat-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    .skill-bar-wrap { margin-bottom: 10px; }
+    .skill-bar-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+    .skill-bar { height: 7px; background: rgba(37,99,235,0.08); overflow: hidden; }
+    .skill-bar-fill { height: 100%; background: linear-gradient(90deg, #2563eb, #60a5fa); transition: width 1s ease; }
+    .timeline-item { position: relative; padding-left: 26px; padding-bottom: 18px; }
+    .timeline-item::before { content: ''; position: absolute; left: 6px; top: 8px; bottom: 0; width: 2px; background: rgba(37,99,235,0.15); }
+    .timeline-item:last-child::before { display: none; }
+    .timeline-dot { position: absolute; left: 0; top: 6px; width: 14px; height: 14px; border-radius: 50%; background: #2563eb; border: 2px solid white; box-shadow: 0 0 0 2px rgba(37,99,235,0.25); }
+    .achievement-badge { padding: 10px 14px; border: 1px solid rgba(37,99,235,0.15); background: rgba(37,99,235,0.03); transition: all 0.2s; }
+    .achievement-badge:hover { background: rgba(37,99,235,0.07); border-color: rgba(37,99,235,0.35); }
+    .info-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-color); font-size: 13.5px; }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { color: var(--text-secondary); font-size: 12px; }
+    .player-hero { position: relative; background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); padding: 36px; overflow: hidden; }
+    .player-hero::after { content: ''; position: absolute; top: -50%; right: -10%; width: 350px; height: 350px; border-radius: 50%; background: rgba(37,99,235,0.12); }
+    .chart-container { position: relative; height: 260px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Back CTA -->
+<div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <a href="{% url 'players:player-list' %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Registry
+    </a>
+    <a href="{% url 'players:player-edit' player.pk %}" class="btn btn-primary btn-sm px-4">
+        <i class="bi bi-pencil-square me-1"></i>Edit Profile
+    </a>
+</div>
+
+<!-- Hero Banner -->
+<div class="card border border-light-subtle shadow-sm mb-4 overflow-hidden">
+    <div class="player-hero">
+        <div class="d-flex align-items-center gap-4 flex-wrap" style="position: relative; z-index: 2;">
+            <!-- Photo / Avatar -->
+            <div class="flex-shrink-0">
+                {% if player.photo %}
+                    <img src="{{ player.photo.url }}" alt="{{ player.full_name }}"
+                         style="width: 110px; height: 110px; object-fit: cover; border: 3px solid rgba(96,165,250,0.5);">
+                {% else %}
+                    <div class="d-flex align-items-center justify-content-center fw-bold text-white"
+                         style="width: 110px; height: 110px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); font-size: 2.4rem; border: 3px solid rgba(96,165,250,0.4);">
+                        {{ player.first_name|slice:":1"|upper }}{{ player.last_name|slice:":1"|upper }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Name & Quick Info -->
+            <div class="flex-grow-1">
+                <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                    {% if player.jersey_number %}
+                    <span class="text-white-50 fw-bold" style="font-size: 13px;">#{{ player.jersey_number }}</span>
+                    {% endif %}
+                    <h2 class="fw-bold text-white mb-0" style="font-size: 1.7rem;">{{ player.full_name }}</h2>
+                </div>
+                <p class="text-white-50 small mb-2">
+                    <i class="bi bi-geo-alt me-1"></i>
+                    {% if player.city %}{{ player.city }}, {{ player.state }}{% else %}{{ player.nationality|default:"Unknown Location" }}{% endif %}
+                    &nbsp;·&nbsp;
+                    {% if player.age %}<i class="bi bi-calendar3 me-1"></i>{{ player.age }} yrs{% endif %}
+                    &nbsp;·&nbsp;Joined {{ player.created_at|date:"M Y" }}
+                </p>
+                <div class="d-flex flex-wrap gap-2">
+                    <span class="stat-pill" style="background: rgba(37,99,235,0.25); color: #93c5fd; border: 1px solid rgba(37,99,235,0.35);">
+                        <i class="bi bi-person-badge"></i> {{ player.get_role_display }}
+                    </span>
+                    <span class="stat-pill" style="background: rgba(255,255,255,0.06); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.1);">
+                        <i class="bi bi-shield-fill"></i> {{ player.get_batting_style_display }}
+                    </span>
+                    {% if player.bowling_style %}
+                    <span class="stat-pill" style="background: rgba(255,255,255,0.06); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.1);">
+                        <i class="bi bi-arrow-clockwise"></i> {{ player.get_bowling_style_display }}
+                    </span>
+                    {% endif %}
+                    <span class="stat-pill {% if player.player_status == 'ACTIVE' %}text-success" style="background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3);">
+                        <i class="bi bi-circle-fill" style="font-size: 8px;"></i>
+                    {% elif player.player_status == 'INJURED' %}text-danger" style="background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3);">
+                        <i class="bi bi-bandaid-fill" style="font-size: 10px;"></i>
+                    {% else %}text-secondary" style="background: rgba(107,114,128,0.15); border: 1px solid rgba(107,114,128,0.3);">
+                        <i class="bi bi-pause-circle" style="font-size: 10px;"></i>
+                    {% endif %}
+                        {{ player.get_player_status_display }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Career Quick Stats -->
+            {% if career_stats %}
+            <div class="d-flex gap-3 flex-wrap" style="z-index: 2;">
+                <div class="text-center px-3 py-2" style="border-left: 1px solid rgba(255,255,255,0.1);">
+                    <div class="fw-bold text-white" style="font-size: 1.6rem;">{{ career_stats.matches_played|default:"0" }}</div>
+                    <div class="text-white-50" style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px;">Matches</div>
+                </div>
+                <div class="text-center px-3 py-2" style="border-left: 1px solid rgba(255,255,255,0.1);">
+                    <div class="fw-bold text-white" style="font-size: 1.6rem;">{{ career_stats.runs_scored|default:"0" }}</div>
+                    <div class="text-white-50" style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px;">Runs</div>
+                </div>
+                <div class="text-center px-3 py-2" style="border-left: 1px solid rgba(255,255,255,0.1);">
+                    <div class="fw-bold text-white" style="font-size: 1.6rem;">{{ career_stats.wickets_taken|default:"0" }}</div>
+                    <div class="text-white-50" style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px;">Wickets</div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Main Layout -->
+<div class="row g-4">
+
+    <!-- LEFT COLUMN -->
+    <div class="col-lg-4">
+
+        <!-- Personal Information -->
+        <div class="card border border-light-subtle shadow-sm mb-4">
+            <div class="card-header bg-transparent py-3">
+                <h6 class="fw-bold mb-0"><i class="bi bi-person-lines-fill me-2 text-primary"></i>Personal Information</h6>
+            </div>
+            <div class="card-body px-4 py-2">
+                <div class="info-row">
+                    <span class="info-label">Date of Birth</span>
+                    <span class="fw-semibold small">{{ player.date_of_birth|date:"d M Y"|default:"—" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Nationality</span>
+                    <span class="fw-semibold small">{{ player.nationality|default:"—" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Gender</span>
+                    <span class="fw-semibold small">{{ player.get_gender_display|default:"—" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Height</span>
+                    <span class="fw-semibold small">{% if player.height_cm %}{{ player.height_cm }} cm{% else %}—{% endif %}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Weight</span>
+                    <span class="fw-semibold small">{% if player.weight_kg %}{{ player.weight_kg }} kg{% else %}—{% endif %}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Debut Date</span>
+                    <span class="fw-semibold small">{{ player.debut_date|date:"d M Y"|default:"—" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Wicket Keeper</span>
+                    <span class="fw-semibold small">{% if player.is_wicket_keeper %}<span class="badge bg-success-subtle text-success">Yes</span>{% else %}No{% endif %}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Contract -->
+        <div class="card border border-light-subtle shadow-sm mb-4">
+            <div class="card-header bg-transparent py-3">
+                <h6 class="fw-bold mb-0"><i class="bi bi-file-earmark-text me-2 text-primary"></i>Active Contract</h6>
+            </div>
+            <div class="card-body">
+                {% if active_contract %}
+                <div class="p-3 border border-light-subtle" style="background: rgba(37,99,235,0.02);">
+                    <div class="fw-bold mb-1">{{ active_contract.team.name }}</div>
+                    <div class="text-secondary small mb-2">Contract #{{ active_contract.contract_number }}</div>
+                    <div class="d-flex justify-content-between text-secondary small">
+                        <span>From: <span class="text-primary fw-semibold">{{ active_contract.signing_date }}</span></span>
+                        <span>To: <span class="text-primary fw-semibold">{{ active_contract.expiry_date|default:"Open" }}</span></span>
+                    </div>
+                    {% if active_contract.annual_salary %}
+                    <div class="mt-2 pt-2 border-top border-light-subtle">
+                        <span class="text-secondary small">Annual Pay: </span>
+                        <span class="fw-bold text-success small">{{ active_contract.annual_salary }} {{ active_contract.currency }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-shield-exclamation text-muted" style="font-size: 2rem;"></i>
+                    <p class="text-muted mt-2 small mb-0">No active team contract.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Injuries -->
+        <div class="card border border-light-subtle shadow-sm mb-4">
+            <div class="card-header bg-transparent py-3 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0"><i class="bi bi-bandaid me-2 text-danger"></i>Injury History</h6>
+                <span class="badge bg-secondary-subtle text-secondary">{{ injuries|length }}</span>
+            </div>
+            <div class="card-body py-3">
+                {% for injury in injuries %}
+                <div class="timeline-item">
+                    <div class="timeline-dot {% if injury.is_recovered %}bg-success{% else %}bg-danger{% endif %}"></div>
+                    <div class="fw-semibold small">{{ injury.injury_type }}</div>
+                    <div class="text-secondary" style="font-size: 11px;">
+                        {{ injury.injury_date|date:"d M Y" }}
+                        {% if injury.expected_recovery_date %} · Est. recovery: {{ injury.expected_recovery_date|date:"d M Y" }}{% endif %}
+                    </div>
+                    <div class="mt-1">
+                        <span class="badge {% if injury.severity == 'CRITICAL' %}bg-danger-subtle text-danger{% elif injury.severity == 'SEVERE' %}bg-warning-subtle text-warning{% else %}bg-secondary-subtle text-secondary{% endif %}" style="font-size: 9px;">
+                            {{ injury.get_severity_display }}
+                        </span>
+                        {% if injury.is_recovered %}
+                        <span class="badge bg-success-subtle text-success" style="font-size: 9px;">Recovered</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-3">
+                    <i class="bi bi-heart-pulse text-muted" style="font-size: 1.5rem;"></i>
+                    <p class="text-muted mt-1 small mb-0">No injury records.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="col-lg-8">
+
+        <!-- Career Stats Dashboard -->
+        <div class="card border border-light-subtle shadow-sm mb-4">
+            <div class="card-header bg-transparent py-3">
+                <h6 class="fw-bold mb-0"><i class="bi bi-clipboard-data me-2 text-primary"></i>Career Statistics</h6>
+            </div>
+            <div class="card-body">
+                {% if career_stats %}
+                <div class="row g-3">
+                    <div class="col-6 col-md-3">
+                        <div class="p-3 border border-light-subtle text-center" style="background: rgba(37,99,235,0.03);">
+                            <div class="text-secondary small mb-1">Matches</div>
+                            <div class="fs-4 fw-bold text-primary">{{ career_stats.matches_played|default:"0" }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="p-3 border border-light-subtle text-center">
+                            <div class="text-secondary small mb-1">Runs</div>
+                            <div class="fs-4 fw-bold">{{ career_stats.runs_scored|default:"0" }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="p-3 border border-light-subtle text-center">
+                            <div class="text-secondary small mb-1">Bat Avg</div>
+                            <div class="fs-4 fw-bold">{{ career_stats.batting_average|default:"0.0" }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="p-3 border border-light-subtle text-center">
+                            <div class="text-secondary small mb-1">Strike Rate</div>
+                            <div class="fs-4 fw-bold">{{ career_stats.batting_strike_rate|default:"0.0" }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="p-3 border border-light-subtle text-center">
+                            <div class="text-secondary small mb-1">Wickets</div>
+                            <div class="fs-4 fw-bold text-success">{{ career_stats.wickets_taken|default:"0" }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="p-3 border border-light-subtle text-center">
+                            <div class="text-secondary small mb-1">Bowl Avg</div>
+                            <div class="fs-4 fw-bold text-success">{{ career_stats.bowling_average|default:"0.0" }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="p-3 border border-light-subtle text-center">
+                            <div class="text-secondary small mb-1">Economy</div>
+                            <div class="fs-4 fw-bold">{{ career_stats.economy_rate|default:"0.0" }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="p-3 border border-light-subtle text-center">
+                            <div class="text-secondary small mb-1">Best Bowl</div>
+                            <div class="fs-4 fw-bold">{{ career_stats.best_bowling_figures|default:"—" }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-bar-chart-line text-muted" style="font-size: 2.5rem;"></i>
+                    <p class="text-muted mt-2 small">No career statistics available yet. Stats are populated as matches are played.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Skill Ratings + Radar Chart -->
+        <div class="row g-4 mb-4">
+            <!-- Batting Skills Breakdown -->
+            {% if batting_skills %}
+            <div class="col-md-6">
+                <div class="card border border-light-subtle shadow-sm h-100">
+                    <div class="card-header bg-transparent py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold mb-0"><i class="bi bi-activity me-2 text-primary"></i>Batting Skills</h6>
+                        <span class="badge bg-primary-subtle text-primary">{{ batting_skills.overall_rating|floatformat:0 }}/100</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="skill-bar-wrap">
+                            <div class="skill-bar-label"><span>Technique</span><span>{{ batting_skills.technique }}</span></div>
+                            <div class="skill-bar"><div class="skill-bar-fill" style="width: {{ batting_skills.technique }}%;"></div></div>
+                        </div>
+                        <div class="skill-bar-wrap">
+                            <div class="skill-bar-label"><span>Attacking Play</span><span>{{ batting_skills.attacking_play }}</span></div>
+                            <div class="skill-bar"><div class="skill-bar-fill" style="width: {{ batting_skills.attacking_play }}%;"></div></div>
+                        </div>
+                        <div class="skill-bar-wrap">
+                            <div class="skill-bar-label"><span>Defensive Play</span><span>{{ batting_skills.defensive_play }}</span></div>
+                            <div class="skill-bar"><div class="skill-bar-fill" style="width: {{ batting_skills.defensive_play }}%;"></div></div>
+                        </div>
+                        <div class="skill-bar-wrap">
+                            <div class="skill-bar-label"><span>Footwork</span><span>{{ batting_skills.footwork }}</span></div>
+                            <div class="skill-bar"><div class="skill-bar-fill" style="width: {{ batting_skills.footwork }}%;"></div></div>
+                        </div>
+                        <div class="skill-bar-wrap">
+                            <div class="skill-bar-label"><span>Timing</span><span>{{ batting_skills.timing }}</span></div>
+                            <div class="skill-bar"><div class="skill-bar-fill" style="width: {{ batting_skills.timing }}%;"></div></div>
+                        </div>
+                        <div class="skill-bar-wrap">
+                            <div class="skill-bar-label"><span>vs Spin</span><span>{{ batting_skills.spin_playing_ability }}</span></div>
+                            <div class="skill-bar"><div class="skill-bar-fill" style="width: {{ batting_skills.spin_playing_ability }}%;"></div></div>
+                        </div>
+                        <div class="skill-bar-wrap">
+                            <div class="skill-bar-label"><span>vs Pace</span><span>{{ batting_skills.pace_playing_ability }}</span></div>
+                            <div class="skill-bar"><div class="skill-bar-fill" style="width: {{ batting_skills.pace_playing_ability }}%;"></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Bowling Skills Breakdown -->
+            {% if bowling_skills %}
+            <div class="col-md-6">
+                <div class="card border border-light-subtle shadow-sm h-100">
+                    <div class="card-header bg-transparent py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold mb-0"><i class="bi bi-arrow-clockwise me-2 text-success"></i>Bowling Skills</h6>
+                        <span class="badge bg-success-subtle text-success">{{ bowling_skills.overall_rating|floatformat:0 }}/100</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="skill-bar-wrap">
+                            <div class="skill-bar-label"><span>Pace / Speed</span><span>{{ bowling_skills.pace_or_speed }}</span></div>
+                            <div class="skill-bar"><div class="skill-bar-fill" style="width: {{ bowling_skills.pace_or_speed }}%; background: linear-gradient(90deg, #16a34a, #4ade80);"></div></div>
+                        </div>
+                        <div class="skill-bar-wrap">
+                            <div class="skill-bar-label"><span>Accuracy</span><span>{{ bowling_skills.accuracy }}</span></div>
+                            <div class="skill-bar"><div class="skill-bar-fill" style="width: {{ bowling_skills.accuracy }}%; background: linear-gradient(90deg, #16a34a, #4ade80);"></div></div>
+                        </div>
+                        <div class="skill-bar-wrap">
+                            <div class="skill-bar-label"><span>Swing</span><span>{{ bowling_skills.swing }}</span></div>
+                            <div class="skill-bar"><div class="skill-bar-fill" style="width: {{ bowling_skills.swing }}%; background: linear-gradient(90deg, #16a34a, #4ade80);"></div></div>
+                        </div>
+                        <div class="skill-bar-wrap">
+                            <div class="skill-bar-label"><span>Seam Movement</span><span>{{ bowling_skills.seam_movement }}</span></div>
+                            <div class="skill-bar"><div class="skill-bar-fill" style="width: {{ bowling_skills.seam_movement }}%; background: linear-gradient(90deg, #16a34a, #4ade80);"></div></div>
+                        </div>
+                        <div class="skill-bar-wrap">
+                            <div class="skill-bar-label"><span>Yorker Ability</span><span>{{ bowling_skills.yorker_ability }}</span></div>
+                            <div class="skill-bar"><div class="skill-bar-fill" style="width: {{ bowling_skills.yorker_ability }}%; background: linear-gradient(90deg, #16a34a, #4ade80);"></div></div>
+                        </div>
+                        <div class="skill-bar-wrap">
+                            <div class="skill-bar-label"><span>Death Bowling</span><span>{{ bowling_skills.death_bowling }}</span></div>
+                            <div class="skill-bar"><div class="skill-bar-fill" style="width: {{ bowling_skills.death_bowling }}%; background: linear-gradient(90deg, #16a34a, #4ade80);"></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Radar Chart (if skills available) -->
+            {% if batting_skills or bowling_skills %}
+            <div class="col-12">
+                <div class="card border border-light-subtle shadow-sm">
+                    <div class="card-header bg-transparent py-3">
+                        <h6 class="fw-bold mb-0"><i class="bi bi-diagram-3 me-2 text-primary"></i>Performance Radar</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="skillRadarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Achievements -->
+        <div class="card border border-light-subtle shadow-sm mb-4">
+            <div class="card-header bg-transparent py-3 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0"><i class="bi bi-trophy me-2 text-warning"></i>Awards & Achievements</h6>
+                <span class="badge bg-warning-subtle text-warning">{{ achievements|length }}</span>
+            </div>
+            <div class="card-body">
+                {% if achievements %}
+                <div class="row g-2">
+                    {% for a in achievements %}
+                    <div class="col-md-6">
+                        <div class="achievement-badge d-flex align-items-center gap-3">
+                            <div class="flex-shrink-0 d-flex align-items-center justify-content-center"
+                                 style="width: 38px; height: 38px; background: rgba(245,158,11,0.1); color: #d97706;">
+                                <i class="bi bi-award-fill"></i>
+                            </div>
+                            <div>
+                                <div class="fw-semibold small">{{ a.get_achievement_type_display }}</div>
+                                <div class="text-secondary" style="font-size: 11px;">
+                                    {{ a.achievement_date|date:"d M Y" }}
+                                    {% if a.description %} · {{ a.description|truncatechars:40 }}{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-trophy text-muted" style="font-size: 2rem;"></i>
+                    <p class="text-muted mt-2 small mb-0">No achievements recorded yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Biography -->
+        {% if player.biography %}
+        <div class="card border border-light-subtle shadow-sm">
+            <div class="card-header bg-transparent py-3">
+                <h6 class="fw-bold mb-0"><i class="bi bi-file-person me-2 text-primary"></i>Biography</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-secondary small" style="white-space: pre-line; line-height: 1.8;">{{ player.biography }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{% if batting_skills or bowling_skills %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('skillRadarChart');
+    if (!ctx) return;
+
+    const labels = ['Technique', 'Attacking', 'Defensive', 'Footwork', 'Timing', 'Vs Spin', 'Vs Pace', 'Pace/Speed', 'Accuracy', 'Swing', 'Yorker', 'Death Bowl'];
+    const battingData = [
+        {{ batting_skills.technique|default:0 }},
+        {{ batting_skills.attacking_play|default:0 }},
+        {{ batting_skills.defensive_play|default:0 }},
+        {{ batting_skills.footwork|default:0 }},
+        {{ batting_skills.timing|default:0 }},
+        {{ batting_skills.spin_playing_ability|default:0 }},
+        {{ batting_skills.pace_playing_ability|default:0 }},
+        0, 0, 0, 0, 0
+    ];
+    const bowlingData = [
+        0, 0, 0, 0, 0, 0, 0,
+        {{ bowling_skills.pace_or_speed|default:0 }},
+        {{ bowling_skills.accuracy|default:0 }},
+        {{ bowling_skills.swing|default:0 }},
+        {{ bowling_skills.yorker_ability|default:0 }},
+        {{ bowling_skills.death_bowling|default:0 }}
+    ];
+
+    new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: labels,
+            datasets: [
+                {% if batting_skills %}
+                {
+                    label: 'Batting',
+                    data: battingData,
+                    backgroundColor: 'rgba(37, 99, 235, 0.12)',
+                    borderColor: '#2563eb',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#2563eb',
+                    pointRadius: 4,
+                },
+                {% endif %}
+                {% if bowling_skills %}
+                {
+                    label: 'Bowling',
+                    data: bowlingData,
+                    backgroundColor: 'rgba(22, 163, 74, 0.10)',
+                    borderColor: '#16a34a',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#16a34a',
+                    pointRadius: 4,
+                }
+                {% endif %}
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    min: 0, max: 100,
+                    ticks: { stepSize: 25, font: { size: 10 }, color: '#9ca3af' },
+                    grid: { color: 'rgba(0,0,0,0.06)' },
+                    pointLabels: { font: { size: 11 }, color: '#374151' }
+                }
+            },
+            plugins: {
+                legend: { position: 'bottom', labels: { font: { size: 12 }, padding: 16 } }
+            }
+        }
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

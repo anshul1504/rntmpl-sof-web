@@ -1,0 +1,6 @@
+{% extends "accounts/base.html" %}
+{% block title %}Generate Fixtures{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between mb-4"><div><h2 class="fw-bold">Round-Robin Fixture Generator</h2><p class="text-secondary">{{ tournament.name }} · {{ team_count }} registered teams</p></div><a href="{% url 'tournaments:tournament-detail' tournament.pk %}" class="btn btn-outline-secondary">Back</a></div>
+<div class="card shadow-sm"><div class="card-body p-4"><div class="alert alert-info">Generates every team-vs-team combination once and distributes matches across days and time slots.</div><form method="post">{% csrf_token %}{{ form.non_field_errors }}<div class="row g-3">{% for field in form %}<div class="col-md-6"><label class="form-label fw-semibold">{{ field.label }}</label>{{ field }}<div class="text-danger small">{{ field.errors }}</div></div>{% endfor %}</div><button class="btn btn-primary mt-4">Generate Complete Schedule</button></form></div></div>
+{% endblock %}

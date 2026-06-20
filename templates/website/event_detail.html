@@ -1,0 +1,57 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% block content %}
+<section class="rnt-event-detail-hero" style="background-image:linear-gradient(rgba(0,0,0,.68),rgba(0,0,0,.68)),url('{% if tournament.banner_image %}{{ tournament.banner_image.url }}{% else %}{% static "website/images/event-details.jpg" %}{% endif %}')">
+    <div>
+        <a href="{% url 'publicsite:event-list' %}"><i class="feather-icon icon-arrow-left"></i> {{ event_page.detail_back_text }}</a>
+        <p>{{ tournament.get_status_display }} · {{ tournament.format.name }}</p>
+        <h1>{{ tournament.name }}</h1>
+        <div class="rnt-event-detail-meta">
+            {% if tournament.start_date %}<span><i class="feather-icon icon-calendar"></i>{{ tournament.start_date|date:"d M Y" }}{% if tournament.end_date %} – {{ tournament.end_date|date:"d M Y" }}{% endif %}</span>{% endif %}
+            <span><i class="feather-icon icon-map-pin"></i>{{ tournament.city|default:tournament.venue|default:"Venue TBA" }}</span>
+        </div>
+    </div>
+</section>
+
+<main class="rnt-event-detail-page">
+    <section class="rnt-event-summary">
+        <div>
+            <p class="rnt-section-kicker">{{ event_page.overview_eyebrow }}</p>
+            <h2>{{ event_page.overview_title }}</h2>
+            <p>{{ tournament.description|default:"Official RNTMPL cricket tournament featuring structured fixtures, verified teams and competitive match play." }}</p>
+        </div>
+        <div class="rnt-event-summary-stats">
+            <span><strong>{{ tournament.total_teams }}</strong>{{ event_page.teams_label }}</span>
+            <span><strong>{{ tournament.total_matches }}</strong>{{ event_page.matches_label }}</span>
+            <span><strong>{{ tournament.total_players }}</strong>{{ event_page.players_label }}</span>
+        </div>
+    </section>
+
+    <section class="rnt-event-detail-grid">
+        <div>
+            <div class="rnt-event-section-heading"><p class="rnt-section-kicker">{{ event_page.fixtures_eyebrow }}</p><h2>{{ event_page.fixtures_title }}</h2></div>
+            <div class="rnt-fixture-list">
+                {% for match in matches %}
+                <a href="{% url 'publicsite:scorecard' match.pk %}">
+                    <div><span>{{ match.match_date|date:"d M Y, h:i A" }}</span><strong>{{ match.home_team.team.name }} <em>vs</em> {{ match.away_team.team.name }}</strong><small>{{ match.venue|default:"Venue TBA" }}</small></div>
+                    <i class="feather-icon icon-arrow-right"></i>
+                </a>
+                {% empty %}<div class="rnt-event-detail-empty">{{ event_page.fixtures_empty_text }}</div>{% endfor %}
+            </div>
+        </div>
+        <aside>
+            <div class="rnt-event-section-heading"><p class="rnt-section-kicker">{{ event_page.teams_eyebrow }}</p><h2>{{ event_page.teams_title }}</h2></div>
+            <div class="rnt-event-team-list">
+                {% for registration in teams %}<div><span>{{ forloop.counter|stringformat:"02d" }}</span><strong>{{ registration.team.name }}</strong></div>{% empty %}<div class="rnt-event-detail-empty">{{ event_page.teams_empty_text }}</div>{% endfor %}
+            </div>
+        </aside>
+    </section>
+
+    {% for block in standings_by_group %}
+    <section class="rnt-event-standings">
+        <div class="rnt-event-section-heading"><p class="rnt-section-kicker">Standings</p><h2>{{ block.group.name }}</h2></div>
+        <div class="table-responsive"><table><thead><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>L</th><th>Pts</th><th>NRR</th></tr></thead><tbody>{% for row in block.standings %}<tr><td>{{ row.position }}</td><td>{{ row.team.team.name }}</td><td>{{ row.played }}</td><td>{{ row.won }}</td><td>{{ row.lost }}</td><td><strong>{{ row.points }}</strong></td><td>{{ row.net_run_rate }}</td></tr>{% endfor %}</tbody></table></div>
+    </section>
+    {% endfor %}
+</main>
+{% endblock %}

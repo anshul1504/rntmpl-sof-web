@@ -1,0 +1,25 @@
+{{ platform_name }} - OTP Verification
+========================================
+
+Hello,
+
+You requested a One-Time Password (OTP) for {{ purpose }} on {{ platform_name }}.
+
+Your OTP code is:
+{{ otp }}
+
+This code is valid for {{ expiry_minutes }} minutes.
+
+--------------------------------------------------
+SECURITY NOTICE:
+Never share this OTP with anyone, including support staff. 
+We will never ask you for your OTP.
+--------------------------------------------------
+
+If you did not request this OTP, you can safely ignore this email.
+
+This is an automated message, please do not reply to this email.
+© {{ platform_name }}. All rights reserved.
+
+--------------------------------------------------
+Designed & Developed by The Webfix (https://www.thewebfix.in)

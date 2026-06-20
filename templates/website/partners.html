@@ -1,0 +1,75 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% block content %}
+<section class="rnt-page-hero has-image" style="background-image:linear-gradient(rgba(0,0,0,.64),rgba(0,0,0,.64)),url('{% if partner_page.banner_image %}{{ partner_page.banner_image.url }}{% else %}{% static "website/images/cricket-video.jpg" %}{% endif %}')">
+    <p class="rnt-page-kicker">{{ partner_page.eyebrow }}</p>
+    <h1>{{ partner_page.title }}</h1>
+</section>
+
+<main class="rnt-partner-page">
+    <section class="rnt-partner-overview">
+        <div><p class="rnt-section-kicker">Collaborate With Us</p><h2>{{ partner_page.benefits_title }}</h2><p>{{ partner_page.description }}</p></div>
+        <div class="rnt-partner-benefits">
+            <div><span>01</span><p>{{ partner_page.benefit_one }}</p></div>
+            <div><span>02</span><p>{{ partner_page.benefit_two }}</p></div>
+            <div><span>03</span><p>{{ partner_page.benefit_three }}</p></div>
+            <div><span>04</span><p>{{ partner_page.benefit_four }}</p></div>
+        </div>
+    </section>
+
+    <section class="rnt-partner-opportunities">
+        <div class="rnt-partner-section-heading"><p class="rnt-section-kicker">Work With RNTMPL</p><h2>{{ partner_page.opportunities_title }}</h2></div>
+        <div class="rnt-partner-types">
+            {% for item in partner_opportunities %}
+            <div><i class="feather-icon {{ item.icon }}"></i><h3>{{ item.title }}</h3><p>{{ item.description }}</p></div>
+            {% empty %}
+            <div><i class="feather-icon icon-star"></i><h3>Sponsorship</h3><p>Brand visibility across tournaments, players and digital audiences.</p></div>
+            <div><i class="feather-icon icon-home"></i><h3>Academy &amp; Venue</h3><p>Host trials, training initiatives and professionally managed matches.</p></div>
+            <div><i class="feather-icon icon-video"></i><h3>Media &amp; Technology</h3><p>Power cricket storytelling, streaming, scoring and digital experiences.</p></div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="rnt-partner-process">
+        <div class="rnt-partner-section-heading"><p class="rnt-section-kicker">Simple &amp; Transparent</p><h2>{{ partner_page.process_title }}</h2></div>
+        <div class="rnt-partner-process-grid">
+            <div><strong>01</strong><h3>Submit Enquiry</h3><p>Share your organisation and partnership objective.</p></div>
+            <div><strong>02</strong><h3>Opportunity Review</h3><p>Our team evaluates audience, event and activation fit.</p></div>
+            <div><strong>03</strong><h3>Proposal &amp; Scope</h3><p>We define deliverables, timelines and measurable outcomes.</p></div>
+            <div><strong>04</strong><h3>Launch Partnership</h3><p>Execute the collaboration with clear coordination and reporting.</p></div>
+        </div>
+    </section>
+
+    {% if partner_logos %}
+    <section class="rnt-partner-showcase">
+        <p>Our Partners &amp; Collaborators</p>
+        <div>{% for partner in partner_logos %}{% if partner.website_url %}<a href="{{ partner.website_url }}" target="_blank" rel="noopener">{% else %}<span>{% endif %}<img loading="lazy" decoding="async" src="{{ partner.logo.url }}" alt="{{ partner.name }}">{% if partner.website_url %}</a>{% else %}</span>{% endif %}{% endfor %}</div>
+    </section>
+    {% endif %}
+
+    <section class="rnt-partner-form-section">
+        <div class="rnt-partner-form-copy"><p class="rnt-section-kicker">Partnership Enquiry</p><h2>{{ partner_page.form_title }}</h2><p>Share your organisation details and proposal. Our partnerships team will review the opportunity and connect with you.</p></div>
+        <form method="post" class="rnt-partner-form" novalidate>
+            {% csrf_token %}
+            {% if form.non_field_errors %}<div class="rnt-form-error-summary">{{ form.non_field_errors }}</div>{% endif %}
+            <div class="rnt-form-grid">
+                {% for field in form %}
+                <div class="rnt-form-field{% if field.name == 'message' %} is-full{% endif %}">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+                    {{ field }}
+                    {% for error in field.errors %}<small class="rnt-field-error">{{ error }}</small>{% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+            <button type="submit" class="btn btn-gr rnt-contact-submit">Submit Partnership Enquiry <i class="feather-icon icon-send"></i></button>
+        </form>
+    </section>
+
+    {% if partner_faqs %}
+    <section class="rnt-partner-faq">
+        <div class="rnt-partner-section-heading"><p class="rnt-section-kicker">Quick Answers</p><h2>{{ partner_page.faq_title }}</h2></div>
+        <div class="accordion" id="partnerFaq">{% for faq in partner_faqs %}<div class="rnt-faq-item"><h3><button type="button" data-bs-toggle="collapse" data-bs-target="#partnerFaq{{ faq.pk }}">{{ faq.question }}<i class="feather-icon icon-plus"></i></button></h3><div id="partnerFaq{{ faq.pk }}" class="accordion-collapse collapse{% if forloop.first %} show{% endif %}" data-bs-parent="#partnerFaq"><div>{{ faq.answer }}</div></div></div>{% endfor %}</div>
+    </section>
+    {% endif %}
+</main>
+{% endblock %}

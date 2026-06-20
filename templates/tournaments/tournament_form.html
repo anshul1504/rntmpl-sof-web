@@ -1,0 +1,150 @@
+{% extends "accounts/base.html" %}
+{% load static %}
+{% block title %}{% if object %}Edit Tournament{% else %}Create Tournament{% endif %} - RNT MPL{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{% if object %}{% url 'tournaments:tournament-detail' object.pk %}{% else %}{% url 'tournaments:tournament-list' %}{% endif %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Back to {% if object %}Tournament{% else %}List{% endif %}
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card border border-light-subtle shadow-sm mb-5">
+            <div class="card-header bg-transparent py-3 border-light-subtle">
+                <h4 class="fw-bold mb-1">{% if object %}Edit Tournament Details{% else %}Create New Tournament{% endif %}</h4>
+                <p class="text-secondary small mb-0">Define registration timelines, structure format, and prize pool configurations.</p>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <!-- Section: General Identity -->
+                    <div class="row g-3 mb-4">
+                        <h5 class="fw-bold border-bottom pb-2 text-primary" style="font-size: 15px;">General Details</h5>
+                        <div class="col-md-8">
+                            <label for="id_name" class="form-label small fw-medium">Tournament Name *</label>
+                            {{ form.name }}
+                            <div class="text-danger small">{{ form.name.errors }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="id_format" class="form-label small fw-medium">Format Type *</label>
+                            {{ form.format }}
+                            <div class="text-danger small">{{ form.format.errors }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_season" class="form-label small fw-medium">Season / Label (e.g. Season 1, 2026)</label>
+                            {{ form.season }}
+                            <div class="text-danger small">{{ form.season.errors }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_max_teams_allowed" class="form-label small fw-medium">Maximum Teams Allowed (0 = Unlimited)</label>
+                            {{ form.max_teams_allowed }}
+                            <div class="text-danger small">{{ form.max_teams_allowed.errors }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Section: Schedule & Timelines -->
+                    <div class="row g-3 mb-4">
+                        <h5 class="fw-bold border-bottom pb-2 text-primary" style="font-size: 15px;">Dates & Schedule</h5>
+                        <div class="col-md-6">
+                            <label for="id_start_date" class="form-label small fw-medium">Tournament Start Date</label>
+                            {{ form.start_date }}
+                            <div class="text-danger small">{{ form.start_date.errors }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_end_date" class="form-label small fw-medium">Tournament End Date</label>
+                            {{ form.end_date }}
+                            <div class="text-danger small">{{ form.end_date.errors }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_registration_start_date" class="form-label small fw-medium">Registration Start Date</label>
+                            {{ form.registration_start_date }}
+                            <div class="text-danger small">{{ form.registration_start_date.errors }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_registration_end_date" class="form-label small fw-medium">Registration End Date</label>
+                            {{ form.registration_end_date }}
+                            <div class="text-danger small">{{ form.registration_end_date.errors }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Section: Location & Venue -->
+                    <div class="row g-3 mb-4">
+                        <h5 class="fw-bold border-bottom pb-2 text-primary" style="font-size: 15px;">Venue Details</h5>
+                        <div class="col-md-6">
+                            <label for="id_venue" class="form-label small fw-medium">Primary Venue / Ground Name</label>
+                            {{ form.venue }}
+                            <div class="text-danger small">{{ form.venue.errors }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_city" class="form-label small fw-medium">City</label>
+                            {{ form.city }}
+                            <div class="text-danger small">{{ form.city.errors }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="id_state" class="form-label small fw-medium">State</label>
+                            {{ form.state }}
+                            <div class="text-danger small">{{ form.state.errors }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="id_country" class="form-label small fw-medium">Country *</label>
+                            {{ form.country }}
+                            <div class="text-danger small">{{ form.country.errors }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Section: Rewards & Fees -->
+                    <div class="row g-3 mb-4">
+                        <h5 class="fw-bold border-bottom pb-2 text-primary" style="font-size: 15px;">Finance & Rewards</h5>
+                        <div class="col-md-6">
+                            <label for="id_entry_fee" class="form-label small fw-medium">Entry Fee (INR)</label>
+                            {{ form.entry_fee }}
+                            <div class="text-danger small">{{ form.entry_fee.errors }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_prize_money" class="form-label small fw-medium">Total Prize Pool (INR)</label>
+                            {{ form.prize_money }}
+                            <div class="text-danger small">{{ form.prize_money.errors }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Section: Regulations -->
+                    <div class="row g-3 mb-4">
+                        <h5 class="fw-bold border-bottom pb-2 text-primary" style="font-size: 15px;">Regulations & Rules</h5>
+                        <div class="col-12">
+                            <label for="id_rules_and_regulations" class="form-label small fw-medium">Tournament Rules & Guidelines</label>
+                            {{ form.rules_and_regulations }}
+                            <div class="text-danger small">{{ form.rules_and_regulations.errors }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Section: Branding -->
+                    <div class="row g-3 mb-4">
+                        <h5 class="fw-bold border-bottom pb-2 text-primary" style="font-size: 15px;">Branding Files</h5>
+                        <div class="col-md-6">
+                            <label for="id_logo" class="form-label small fw-medium">Tournament Emblem / Logo</label>
+                            {{ form.logo }}
+                            <div class="text-danger small">{{ form.logo.errors }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_banner_image" class="form-label small fw-medium">Hero Banner Image</label>
+                            {{ form.banner_image }}
+                            <div class="text-danger small">{{ form.banner_image.errors }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-end gap-2 border-top pt-4">
+                        <a href="{% url 'tournaments:tournament-list' %}" class="btn btn-outline-secondary px-4 py-2">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-5 py-2" style="background: var(--primary-gradient) !important; color: #0c0c0c !important; font-weight: 500; border: none !important;">
+                            Save Tournament
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

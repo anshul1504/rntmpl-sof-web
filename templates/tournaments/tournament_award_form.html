@@ -1,0 +1,69 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block title %}Add Award - {{ tournament.name }} - RNT MPL{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0" style="max-width: 800px; margin: 0 auto;">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h3 mb-1 fw-bold text-gradient">Create Award</h1>
+            <p class="text-secondary small mb-0">Add an award to <strong>{{ tournament.name }}</strong></p>
+        </div>
+        <a href="{% url 'tournaments:tournament-detail' tournament.id %}" class="btn btn-outline-secondary py-2 small fw-semibold"><i class="bi bi-arrow-left me-1"></i>Back to Tournament</a>
+    </div>
+
+    <div class="card premium-card border-0 shadow-sm">
+        <div class="card-body p-4">
+            <form method="post">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger border-0 mb-4" style="background-color: var(--card-bg); border-left: 4px solid var(--gold-primary) !important; color: var(--text-primary);">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <label class="form-label small fw-bold" for="{{ form.name.id_for_label }}">Award Name (e.g. Man of the Tournament)</label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                        <div class="text-danger small mt-1">{{ form.name.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label class="form-label small fw-bold" for="{{ form.prize_amount.id_for_label }}">Prize Amount</label>
+                        {{ form.prize_amount }}
+                        {% if form.prize_amount.errors %}
+                        <div class="text-danger small mt-1">{{ form.prize_amount.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label small fw-bold" for="{{ form.winner.id_for_label }}">Winner (Optional, select player profile)</label>
+                        {{ form.winner }}
+                        {% if form.winner.errors %}
+                        <div class="text-danger small mt-1">{{ form.winner.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label small fw-bold" for="{{ form.criteria.id_for_label }}">Award Criteria</label>
+                        {{ form.criteria }}
+                        {% if form.criteria.errors %}
+                        <div class="text-danger small mt-1">{{ form.criteria.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-12 d-flex justify-content-end gap-2 mt-4 border-top pt-3">
+                        <a href="{% url 'tournaments:tournament-detail' tournament.id %}" class="btn btn-outline-secondary py-2.5 small fw-semibold">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4 py-2.5 fw-bold">Create Award</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

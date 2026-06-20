@@ -1,0 +1,29 @@
+{% extends "accounts/base.html" %}
+{% block title %}Match Setup{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div><h2 class="fw-bold mb-1">Match Setup</h2><p class="text-secondary mb-0">{{ match.home_team.team.name }} vs {{ match.away_team.team.name }}</p></div>
+  <a class="btn btn-outline-secondary" href="{% url 'tournaments:tournament-detail' match.tournament.pk %}">Tournament</a>
+</div>
+<div class="alert {% if setup.is_ready %}alert-success{% else %}alert-warning{% endif %}">
+  Status: <strong>{{ setup.get_lifecycle_display }}</strong>. Toss and both complete playing XIs are required before scoring.
+</div>
+<div class="row g-4">
+ <div class="col-lg-5"><div class="card border-0 shadow-sm"><div class="card-body">
+  <h5 class="fw-bold">Toss</h5>
+  <form method="post">{% csrf_token %}{{ form.as_p }}<button class="btn btn-primary">Save Toss</button></form>
+ </div></div></div>
+ <div class="col-lg-7"><div class="card border-0 shadow-sm"><div class="card-body">
+  <div class="d-flex justify-content-between"><h5 class="fw-bold">Playing XI</h5><a href="{% url 'tournaments:match-playing-xi' match.pk %}" class="btn btn-sm btn-primary">Submit XI</a></div>
+  <div class="row mt-3"><div class="col"><strong>{{ match.home_team.team.name }}</strong><ol>{% for item in home_xi %}<li>{{ item.player.full_name }}{% if item.is_captain %} (C){% endif %}{% if item.is_wicket_keeper %} (WK){% endif %}</li>{% empty %}<li class="text-secondary">Not submitted</li>{% endfor %}</ol></div>
+  <div class="col"><strong>{{ match.away_team.team.name }}</strong><ol>{% for item in away_xi %}<li>{{ item.player.full_name }}{% if item.is_captain %} (C){% endif %}{% if item.is_wicket_keeper %} (WK){% endif %}</li>{% empty %}<li class="text-secondary">Not submitted</li>{% endfor %}</ol></div></div>
+ </div></div></div>
+</div>
+<div class="card border-0 shadow-sm mt-4"><div class="card-body">
+ <div class="d-flex justify-content-between"><h5 class="fw-bold">Match Officials</h5><a href="{% url 'tournaments:match-official-add' match.pk %}" class="btn btn-sm btn-outline-primary">Assign Official</a></div>
+ <ul class="mt-3">{% for item in official_assignments %}<li>{{ item.get_duty_display }}: {{ item.tournament_official.official.full_name }}</li>{% empty %}<li class="text-secondary">No match officials assigned.</li>{% endfor %}</ul>
+</div></div>
+<form method="post" action="{% url 'tournaments:match-setup-lock' match.pk %}" class="mt-4">{% csrf_token %}
+ <button class="btn btn-success" {% if not setup.is_ready %}disabled{% endif %}>Lock Setup & Enable Scoring</button>
+</form>
+{% endblock %}
