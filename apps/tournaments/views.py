@@ -120,7 +120,9 @@ class TournamentDetailView(LoginRequiredMixin, DetailView):
 
         # Add related tournament information
         context['stages'] = tournament.tournaments_stageinstance_stages.all()
-        context['teams'] = tournament.tournaments_tournamentteam_teams.select_related('team')
+        context['teams'] = TournamentTeam.objects.filter(
+            tournament=tournament, is_deleted=False
+        ).select_related('team')
         context['matches'] = tournament.tournaments_tournamentmatch_matches.select_related('home_team__team', 'away_team__team').order_by('match_date', 'match_number')
         context['officials'] = tournament.tournaments_tournamentofficial_officials.select_related('official')
         context['awards'] = tournament.tournaments_tournamentaward_awards.select_related('winner')
@@ -330,11 +332,17 @@ class FixtureGeneratorView(LoginRequiredMixin, CapabilityRequiredMixin, FormView
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['tournament'] = self.tournament
-        context['team_count'] = self.tournament.tournaments_tournamentteam_teams.filter(is_deleted=False).count()
+        context['team_count'] = TournamentTeam.objects.filter(
+            tournament=self.tournament, is_deleted=False
+        ).count()
         return context
 
     def form_valid(self, form):
-        teams = list(self.tournament.tournaments_tournamentteam_teams.filter(is_deleted=False).order_by('seed', 'team__name'))
+        teams = list(
+            TournamentTeam.objects.filter(
+                tournament=self.tournament, is_deleted=False
+            ).order_by('seed', 'team__name')
+        )
         if len(teams) < 2:
             form.add_error(None, 'Register at least two teams before generating fixtures.')
             return self.form_invalid(form)

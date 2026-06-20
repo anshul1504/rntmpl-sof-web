@@ -12,7 +12,7 @@ from apps.accounts.models import Tenant
 from apps.auctions.forms import AuctionEventForm, AuctionLotForm, BidForm
 from apps.accounts.policies import CapabilityRequiredMixin
 from apps.auctions.models import AuctionEvent, AuctionFranchise, AuctionLot, AuctionBid
-from apps.tournaments.models import Tournament, TournamentPlayer
+from apps.tournaments.models import Tournament, TournamentPlayer, TournamentTeam
 
 
 def active_tenant(request):
@@ -53,7 +53,9 @@ class AuctionCreateView(LoginRequiredMixin, CapabilityRequiredMixin, CreateView)
                     tournament_team=team,
                     initial_purse=self.object.default_purse,
                 )
-                for team in self.tournament.tournaments_tournamentteam_teams.filter(is_deleted=False)
+                for team in TournamentTeam.objects.filter(
+                    tournament=self.tournament, is_deleted=False
+                )
             ])
         messages.success(self.request, 'Auction created and franchise purses initialized.')
         return response

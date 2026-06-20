@@ -1,5 +1,7 @@
 # RNT MPL Development Session - 2026-06-16
 
+> Historical snapshot: this document records the June 16 authentication session only. Its percentages and pending lists are not current project status. See `PROJECT_STATUS.md`.
+
 ## 🎯 Session Focus: Authentication & Tenant Onboarding
 
 ### ✅ What Was Completed

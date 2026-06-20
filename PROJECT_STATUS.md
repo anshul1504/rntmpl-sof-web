@@ -1,7 +1,8 @@
 ﻿# RNT MPL Cricket Platform - Project Status
 
 **Date:** 2026-06-20  
-**Milestone:** Organizer MVP  
+**Milestone:** Organizer Hardening Complete
+**Current completion:** **85%**
 **Stack:** Django, Django REST Framework, Bootstrap templates  
 **Verification style:** Lightweight product checks
 
@@ -32,6 +33,8 @@ The project has moved beyond auth-only Phase 1. The current target is an interna
 | Session stability | Ready | Cached database sessions survive Redis restarts; remember-me and active organization persistence are explicit. |
 | Fixture rescheduling | Ready | Scheduled matches can be moved with venue/time and team/time conflict validation. |
 | Player auction | MVP ready | Tournament auction, franchise purses, player lots, live bids, sold/unsold closure and squad assignment are operational. |
+| Organizer security | Hardened | Role capability matrix, inactive/missing-role denial, tenant-safe API writes, and object-level tenant scoping are tested. |
+| Organizer regression coverage | Ready | Squad leadership, fixture generation, setup readiness, scoring correction, result/standings, and auction closure have focused regression tests. |
 
 ## Implemented In This Organizer MVP Pass
 
@@ -67,10 +70,9 @@ The project has moved beyond auth-only Phase 1. The current target is an interna
 
 | Priority | Item |
 |---|---|
-| High | Add focused smoke tests for tenant isolation, tournament setup, match scheduling, and scoring completion. |
-| High | Add scorer correction/undo workflow for wrongly entered balls. |
-| High | Improve team squad management outside tournament-specific squad registration. |
-| High | Add focused smoke tests for match setup, scoring completion, corrections, fixture generation, and auction closure. |
+| High | Expand API capability enforcement across every secondary team/tournament sub-entity endpoint. |
+| High | Add browser-level organizer and scorer journey tests. |
+| Medium | Improve bulk team squad operations and transfer workflows. |
 | Medium | Add public tournament/team/player/live-score pages for fan viewing. |
 | Medium | Add API parity for scoring actions if mobile/frontend clients need it. |
 | Later | Production hardening, payments/Razorpay, WebSockets, notification outbox, advanced analytics. |
@@ -79,6 +81,6 @@ The project has moved beyond auth-only Phase 1. The current target is an interna
 
 - `python manage.py check`: passing.
 - `python manage.py makemigrations --check --dry-run`: no changes detected.
-- Full test-suite execution is intentionally not the MVP gate right now; use focused smoke checks for touched product flows.
+- Full test suite is the organizer-hardening gate and must remain green.
 
 

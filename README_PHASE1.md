@@ -1,6 +1,8 @@
 ﻿# RNT MPL Cricket Platform - Phase 1: Authentication & Tenant Onboarding
 
-**Status:** âœ… 95% Complete - Ready for Email Integration Testing
+> Historical Phase 1 guide. Current platform completion and backlog are maintained in `PROJECT_STATUS.md`.
+
+**Status:** Historical Phase 1 snapshot
 
 ---
 

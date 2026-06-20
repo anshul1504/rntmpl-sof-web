@@ -1,5 +1,7 @@
 # RNT MPL Enterprise Cricket Platform - Deep Audit
 
+> Historical snapshot: this audit describes the repository state on June 15-16, 2026. It is retained for architectural history and is not the current delivery status. See `PROJECT_STATUS.md` for the authoritative status and completion percentage.
+
 Audit date: 2026-06-15
 
 ## Executive Verdict (Updated 2026-06-16)

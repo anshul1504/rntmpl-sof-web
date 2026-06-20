@@ -1,6 +1,9 @@
-from django.test import TestCase
+from datetime import date
 
-from apps.accounts.models import User
+from django.test import TestCase
+from django.urls import reverse
+
+from apps.accounts.models import Role, User, UserTenant
 from apps.players.models import PlayerProfile
 from apps.teams.models import Team
 from apps.tournaments.models import (
@@ -15,6 +18,7 @@ from apps.tournaments.models import (
     TournamentTeam,
 )
 from apps.accounts.models import Tenant
+from apps.venues.models import Venue
 
 
 class MatchSetupReadinessTests(TestCase):
@@ -101,3 +105,67 @@ class MatchSetupReadinessTests(TestCase):
         )
 
         self.assertTrue(self.setup.is_ready)
+
+
+class OrganizerFixtureJourneyTests(TestCase):
+    def test_organizer_can_generate_round_robin_fixtures(self):
+        tenant = Tenant.objects.create(name='Journey League')
+        user = User.objects.create_user(
+            email='organizer@example.com', password='strong-test-password'
+        )
+        role = Role.objects.create(
+            tenant=tenant,
+            name='Tournament Manager',
+            code='TOURNAMENT_MANAGER',
+        )
+        UserTenant.objects.create(
+            user=user, tenant=tenant, role=role, is_primary=True
+        )
+        self.client.force_login(user)
+        session = self.client.session
+        session['active_tenant_id'] = str(tenant.id)
+        session.save()
+        format_record = TournamentFormat.objects.create(
+            name='Journey League Format',
+            code='JOURNEY-RR',
+            slug='journey-rr',
+        )
+        tournament = Tournament.objects.create(
+            tenant=tenant,
+            name='Journey Cup',
+            slug='journey-cup',
+            format=format_record,
+        )
+        for index in range(4):
+            team = Team.objects.create(
+                tenant=tenant,
+                name=f'Journey Team {index + 1}',
+                code=f'JOURNEY-{index + 1}',
+            )
+            TournamentTeam.objects.create(
+                tournament=tournament, team=team, seed=index + 1
+            )
+        venue = Venue.objects.create(
+            tenant=tenant, name='Journey Stadium', city='Indore'
+        )
+
+        response = self.client.post(
+            reverse('tournaments:fixture-generate', args=[tournament.pk]),
+            {
+                'start_date': date(2026, 7, 1).isoformat(),
+                'first_match_time': '10:00',
+                'matches_per_day': 2,
+                'days_between_rounds': 1,
+                'slot_gap_minutes': 240,
+                'venue': venue.pk,
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        fixtures = TournamentMatch.objects.filter(tournament=tournament)
+        self.assertEqual(fixtures.count(), 6)
+        pairings = {
+            frozenset((fixture.home_team_id, fixture.away_team_id))
+            for fixture in fixtures
+        }
+        self.assertEqual(len(pairings), 6)

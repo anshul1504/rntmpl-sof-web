@@ -1,5 +1,7 @@
 ﻿# RNT MPL Authentication System - Implementation Summary
 
+> Historical snapshot: this document covers the original Phase 1 authentication delivery. See `PROJECT_STATUS.md` for current implementation status.
+
 ## ðŸŽ¯ Overview
 
 Completed full **JWT + Email-Only OTP authentication system** for the RNT MPL multi-tenant cricket platform. System is **95% complete** and ready for final email configuration.
