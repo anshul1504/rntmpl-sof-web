@@ -1,0 +1,317 @@
+{% extends "accounts/base.html" %}
+{% load static %}
+{% block title %}{{ team.name }} - Team Dashboard - RNT MPL{% endblock %}
+
+{% block content %}
+<!-- Back CTA -->
+<div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <a href="{% url 'teams:team-list' %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Teams
+    </a>
+    <a href="{% url 'teams:team-edit' team.pk %}" class="btn btn-primary btn-sm px-3">
+        <i class="bi bi-pencil-square"></i> Edit Team
+    </a>
+</div>
+
+<!-- Header Card -->
+<div class="card border border-light-subtle shadow-sm mb-4">
+    <div class="card-body p-4">
+        <div class="d-flex align-items-center gap-4 flex-wrap">
+            <!-- Logo / Initials -->
+            <div class="flex-shrink-0">
+                {% if team.logo %}
+                    <img src="{{ team.logo.url }}" alt="{{ team.name }}" class="border border-secondary-subtle p-2" style="width: 100px; height: 100px; object-fit: contain;">
+                {% else %}
+                    <div class="d-flex align-items-center justify-content-center text-white fw-bold fs-1 border border-secondary-subtle" style="width: 100px; height: 100px; background: linear-gradient(135deg, {% if team.jersey_color_primary %}{{ team.jersey_color_primary }}{% else %}#3b82f6{% endif %} 0%, {% if team.jersey_color_secondary %}{{ team.jersey_color_secondary }}{% else %}#1d4ed8{% endif %} 100%) !important;">
+                        {{ team.abbreviation|default:team.name|slice:":2"|upper }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Team Identity -->
+            <div class="flex-grow-1">
+                <div class="d-flex align-items-center gap-3 mb-1 flex-wrap">
+                    <h3 class="fw-bold mb-0">{{ team.name }}</h3>
+                    <span class="badge bg-secondary-subtle text-secondary fw-bold">{{ team.code }}</span>
+                </div>
+                <p class="text-muted small mb-2">
+                    {% if team.home_ground %}{{ team.home_ground }} · {% endif %}
+                    {% if team.city %}{{ team.city }}, {{ team.state }}{% else %}{{ team.country|default:"India" }}{% endif %}
+                    · Registered {{ team.created_at|date:"M d, Y" }}
+                </p>
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    {% if team.team_category %}
+                    <span class="badge px-3 py-2 text-uppercase" style="font-size: 11px; background-color: rgba(37, 99, 235, 0.08) !important; color: #2563eb !important; border: 1px solid rgba(37, 99, 235, 0.2) !important;">
+                        {{ team.team_category.name }}
+                    </span>
+                    {% endif %}
+                    {% if team.team_type %}
+                    <span class="badge px-3 py-2 text-uppercase" style="font-size: 11px; background-color: rgba(107, 114, 128, 0.08) !important; color: #6b7280 !important; border: 1px solid rgba(107, 114, 128, 0.2) !important;">
+                        {{ team.team_type.name }}
+                    </span>
+                    {% endif %}
+                    <span class="badge px-3 py-2 {% if team.is_active %}text-success{% else %}text-secondary{% endif %}" style="font-size: 11px; background-color: {% if team.is_active %}rgba(34,197,94,0.08){% else %}rgba(107,114,128,0.08){% endif %} !important; border: 1px solid {% if team.is_active %}rgba(34,197,94,0.2){% else %}rgba(107,114,128,0.2){% endif %} !important;">
+                        {% if team.is_active %}Active{% else %}Inactive{% endif %}
+                    </span>
+
+                    <!-- Jersey Colors -->
+                    {% if team.jersey_color_primary %}
+                    <div class="d-flex align-items-center gap-1 ms-2">
+                        <span class="text-muted" style="font-size: 10px;">JERSEY</span>
+                        <div style="width: 22px; height: 22px; background: {{ team.jersey_color_primary }}; border: 2px solid var(--border-color);"></div>
+                        {% if team.jersey_color_secondary %}
+                        <div style="width: 22px; height: 22px; background: {{ team.jersey_color_secondary }}; border: 2px solid var(--border-color);"></div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Team Statistics -->
+    <div class="col-lg-6">
+        <div class="card border border-light-subtle shadow-sm h-100">
+            <div class="card-header bg-transparent py-3">
+                <h5 class="fw-bold mb-0"><i class="bi bi-bar-chart-fill me-2 text-primary"></i>Team Statistics</h5>
+            </div>
+            <div class="card-body">
+                {% if stats %}
+                <div class="row g-3">
+                    <div class="col-4">
+                        <div class="text-center p-3 border border-light-subtle">
+                            <div class="text-secondary" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Played</div>
+                            <div class="fs-4 fw-bold text-primary">{{ stats.matches_played }}</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-center p-3 border border-light-subtle">
+                            <div class="text-secondary" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Won</div>
+                            <div class="fs-4 fw-bold text-success">{{ stats.matches_won }}</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-center p-3 border border-light-subtle">
+                            <div class="text-secondary" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Lost</div>
+                            <div class="fs-4 fw-bold text-danger">{{ stats.matches_lost }}</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-center p-3 border border-light-subtle">
+                            <div class="text-secondary" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Win %</div>
+                            <div class="fs-5 fw-bold text-dark">{{ stats.win_percentage }}%</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-center p-3 border border-light-subtle">
+                            <div class="text-secondary" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Total Runs</div>
+                            <div class="fs-5 fw-bold text-dark">{{ stats.total_runs }}</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-center p-3 border border-light-subtle">
+                            <div class="text-secondary" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Wickets</div>
+                            <div class="fs-5 fw-bold text-dark">{{ stats.total_wickets }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-clipboard-data text-muted" style="font-size: 2.5rem;"></i>
+                    <p class="text-muted mt-2 small">No statistics recorded for this team yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Squad -->
+    <div class="col-12">
+        <div class="card border border-light-subtle shadow-sm h-100">
+            <div class="card-header bg-transparent py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <h5 class="fw-bold mb-0"><i class="bi bi-people-fill me-2 text-primary"></i>Team Squad</h5>
+                    {% if active_season %}<small class="text-secondary">{{ active_season.get_season_display }} {{ active_season.year }} · {{ active_season.squad_size }} active players</small>{% endif %}
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'teams:team-season-create' team.pk %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-calendar-plus"></i> Add Season</a>
+                    {% if active_season %}
+                    <a href="{% url 'teams:team-squad-create' active_season.pk %}" class="btn btn-sm btn-primary"><i class="bi bi-person-plus"></i> Add Player</a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                {% if squad %}
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Player</th>
+                                <th>Jersey</th>
+                                <th>Role</th>
+                                <th>Leadership</th>
+                                <th>Status</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for member in squad %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'players:player-detail' member.player.pk %}" class="text-decoration-none fw-semibold text-primary">
+                                        {{ member.player.full_name }}
+                                    </a>
+                                </td>
+                                <td>{{ member.jersey_number|default:"—" }}</td>
+                                <td><span class="badge bg-primary-subtle text-primary">{{ member.role|default:member.player.get_role_display }}</span></td>
+                                <td>
+                                    {% if member.is_captain %}<span class="badge bg-warning-subtle text-warning-emphasis">Captain</span>{% endif %}
+                                    {% if member.is_vice_captain %}<span class="badge bg-info-subtle text-info-emphasis">Vice Captain</span>{% endif %}
+                                    {% if member.is_wicket_keeper %}<span class="badge bg-secondary-subtle text-secondary">WK</span>{% endif %}
+                                </td>
+                                <td>{% if member.is_active %}<span class="text-success">Active</span>{% else %}<span class="text-secondary">Inactive</span>{% endif %}</td>
+                                <td class="text-end">
+                                    <a href="{% url 'teams:team-squad-edit' member.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+                                    <form method="post" action="{% url 'teams:team-squad-remove' member.pk %}" class="d-inline" onsubmit="return confirm('Remove this player from the squad?')">
+                                        {% csrf_token %}<button class="btn btn-sm btn-outline-danger">Remove</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-person-x text-muted" style="font-size: 2.5rem;"></i>
+                    <p class="text-muted mt-2 small">{% if active_season %}No players added to this season yet.{% else %}Create a season before building the squad.{% endif %}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Seasons History -->
+    <div class="col-lg-6">
+        <div class="card border border-light-subtle shadow-sm">
+            <div class="card-header bg-transparent py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0"><i class="bi bi-calendar3 me-2 text-primary"></i>Seasons</h5>
+                <a href="{% url 'teams:team-season-create' team.pk %}" class="btn btn-sm btn-outline-primary">New Season</a>
+            </div>
+            <div class="card-body">
+                {% if seasons %}
+                <div class="list-group list-group-flush">
+                    {% for season in seasons %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0 border-bottom gap-2" style="background: transparent;">
+                        <div>
+                            <span class="fw-semibold">{{ season.get_season_display }} {{ season.year }}</span>
+                            {% if season.captain %}
+                            <span class="text-muted small ms-2">Captain: {{ season.captain.full_name }}</span>
+                            {% endif %}
+                        </div>
+                        <div><span class="badge {% if season.is_active %}bg-success-subtle text-success{% else %}bg-secondary-subtle text-secondary{% endif %} px-2 py-1">{% if season.is_active %}Active{% else %}Ended{% endif %}</span>
+                        <a href="{% url 'teams:team-season-edit' season.pk %}" class="btn btn-sm btn-link">Edit</a></div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-calendar-x text-muted" style="font-size: 2.5rem;"></i>
+                    <p class="text-muted mt-2 small">No seasons registered yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Team Staff -->
+    <div class="col-lg-6">
+        <div class="card border border-light-subtle shadow-sm">
+            <div class="card-header bg-transparent py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0"><i class="bi bi-person-badge me-2 text-primary"></i>Team Staff</h5>
+                {% if active_season %}<a href="{% url 'teams:team-staff-create' active_season.pk %}" class="btn btn-sm btn-outline-primary">Add Staff</a>{% endif %}
+            </div>
+            <div class="card-body">
+                {% for member in staff_members %}
+                <div class="d-flex justify-content-between align-items-center border-bottom py-2 gap-2">
+                    <div><div class="fw-semibold">{{ member.name }}</div><small class="text-secondary">{{ member.get_staff_type_display }}{% if member.contact_phone %} · {{ member.contact_phone }}{% endif %}</small></div>
+                    <div>
+                        <a href="{% url 'teams:team-staff-edit' member.pk %}" class="btn btn-sm btn-link">Edit</a>
+                        <form method="post" action="{% url 'teams:team-staff-remove' member.pk %}" class="d-inline" onsubmit="return confirm('Remove this staff member?')">{% csrf_token %}<button class="btn btn-sm btn-link text-danger">Remove</button></form>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-4 text-secondary">No staff members added for the active season.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Achievements -->
+    <div class="col-lg-6">
+        <div class="card border border-light-subtle shadow-sm">
+            <div class="card-header bg-transparent py-3">
+                <h5 class="fw-bold mb-0"><i class="bi bi-trophy-fill me-2 text-warning"></i>Achievements</h5>
+            </div>
+            <div class="card-body">
+                {% if achievements %}
+                <div class="row g-3">
+                    {% for ach in achievements %}
+                    <div class="col-md-6">
+                        <div class="p-3 border border-light-subtle" style="transition: background 0.15s;" onmouseover="this.style.backgroundColor='var(--card-hover-bg)'" onmouseout="this.style.backgroundColor=''">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <i class="bi bi-award text-warning"></i>
+                                <span class="fw-bold small">{{ ach.get_achievement_type_display }}</span>
+                            </div>
+                            <div class="small text-truncate" title="{{ ach.name }}">{{ ach.name }}</div>
+                            <div class="text-muted" style="font-size: 11px;">{{ ach.achievement_date|date:"M Y" }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-trophy text-muted" style="font-size: 2.5rem;"></i>
+                    <p class="text-muted mt-2 small">No achievements recorded yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact & Info -->
+    <div class="col-12">
+        <div class="card border border-light-subtle shadow-sm">
+            <div class="card-header bg-transparent py-3">
+                <h5 class="fw-bold mb-0"><i class="bi bi-info-circle me-2 text-primary"></i>Contact & Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-md-3">
+                        <div class="text-secondary small text-uppercase" style="letter-spacing: 0.5px;">Email</div>
+                        <div class="fw-semibold">{{ team.email|default:"—" }}</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-secondary small text-uppercase" style="letter-spacing: 0.5px;">Phone</div>
+                        <div class="fw-semibold">{{ team.phone|default:"—" }}</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-secondary small text-uppercase" style="letter-spacing: 0.5px;">Website</div>
+                        {% if team.website %}
+                        <a href="{{ team.website }}" target="_blank" class="text-primary text-decoration-none fw-semibold">{{ team.website }}</a>
+                        {% else %}
+                        <div class="fw-semibold">—</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-secondary small text-uppercase" style="letter-spacing: 0.5px;">Location</div>
+                        <div class="fw-semibold">{% if team.city %}{{ team.city }}, {{ team.state }}{% else %}{{ team.country|default:"—" }}{% endif %}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

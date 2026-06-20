@@ -1,0 +1,79 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block title %}Register Squad Player - {{ tournament_team.tournament.name }} - RNT MPL{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0" style="max-width: 800px; margin: 0 auto;">
+    <!-- Header Page Title -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h3 mb-1 fw-bold text-gradient">Add Squad Player</h1>
+            <p class="text-secondary small mb-0">Add a player to <strong>{{ tournament_team.team.name }}</strong> squad in <strong>{{ tournament_team.tournament.name }}</strong></p>
+        </div>
+        <a href="{% url 'tournaments:tournament-detail' tournament_team.tournament.id %}" class="btn btn-outline-secondary py-2 small fw-semibold"><i class="bi bi-arrow-left me-1"></i>Back to Tournament</a>
+    </div>
+
+    <!-- Registration Form Card -->
+    <div class="card premium-card border-0 shadow-sm">
+        <div class="card-body p-4">
+            <form method="post">
+                {% csrf_token %}
+                
+                <!-- Errors -->
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger border-0 mb-4" style="background-color: var(--card-bg); border-left: 4px solid var(--gold-primary) !important; color: var(--text-primary);">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+
+                <div class="row g-3">
+                    <!-- Player -->
+                    <div class="col-12">
+                        <label class="form-label small fw-bold" for="{{ form.player.id_for_label }}">Select Player</label>
+                        {{ form.player }}
+                        {% if form.player.errors %}
+                        <div class="text-danger small mt-1">{{ form.player.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Jersey Number -->
+                    <div class="col-12 col-md-6">
+                        <label class="form-label small fw-bold" for="{{ form.jersey_number.id_for_label }}">Jersey Number</label>
+                        {{ form.jersey_number }}
+                        {% if form.jersey_number.errors %}
+                        <div class="text-danger small mt-1">{{ form.jersey_number.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Role -->
+                    <div class="col-12 col-md-6">
+                        <label class="form-label small fw-bold" for="{{ form.role.id_for_label }}">Role / Designation (e.g. Opening Batsman, Wicketkeeper)</label>
+                        {{ form.role }}
+                        {% if form.role.errors %}
+                        <div class="text-danger small mt-1">{{ form.role.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Is Playing -->
+                    <div class="col-12">
+                        <div class="form-check form-switch bg-light p-3 rounded">
+                            {{ form.is_playing }}
+                            <label class="form-check-label small fw-bold ms-2" for="{{ form.is_playing.id_for_label }}">Active Squad Player?</label>
+                        </div>
+                        {% if form.is_playing.errors %}
+                        <div class="text-danger small mt-1">{{ form.is_playing.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Submit Actions -->
+                    <div class="col-12 d-flex justify-content-end gap-2 mt-4 border-top pt-3">
+                        <a href="{% url 'tournaments:tournament-detail' tournament_team.tournament.id %}" class="btn btn-outline-secondary py-2.5 small fw-semibold">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4 py-2.5 fw-bold">Add Player</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

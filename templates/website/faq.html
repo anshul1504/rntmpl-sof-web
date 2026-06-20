@@ -1,0 +1,10 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% block content %}
+<section class="rnt-page-hero has-image" style="background-image:linear-gradient(rgba(0,0,0,.64),rgba(0,0,0,.74)),url('{% if faq_page.banner_image %}{{ faq_page.banner_image.url }}{% else %}{% static "website/images/cricket-video.jpg" %}{% endif %}')"><p class="rnt-page-kicker">{{ faq_page.eyebrow }}</p><h1>{{ faq_page.title }}</h1></section>
+<main class="rnt-faq-page">
+    <div class="rnt-faq-intro"><p>{{ faq_page.description }}</p><div class="rnt-faq-filter"><button class="active" data-faq-filter="all">All</button>{% for value,label in faq_categories %}<button data-faq-filter="{{ value }}">{{ label }}</button>{% endfor %}</div></div>
+    <div class="rnt-faq-layout"><aside><p class="rnt-section-kicker">Need Assistance?</p><h2>{{ faq_page.contact_title }}</h2><p>{{ faq_page.contact_description }}</p><a href="{% url 'publicsite:contact' %}">Contact Support <i class="feather-icon icon-arrow-right"></i></a></aside><section class="rnt-faq-list">{% for item in faqs %}<article data-faq-category="{{ item.category }}"><button type="button" aria-expanded="false"><span>{{ item.question }}</span><i class="feather-icon icon-plus"></i></button><div><p>{{ item.answer|linebreaksbr }}</p></div></article>{% empty %}<div class="rnt-event-empty"><h3>FAQs coming soon</h3></div>{% endfor %}</section></div>
+</main>
+<script>document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('.rnt-faq-list article>button').forEach(b=>b.addEventListener('click',()=>{const a=b.parentElement,o=a.classList.toggle('open');b.setAttribute('aria-expanded',o);b.querySelector('i').className='feather-icon '+(o?'icon-minus':'icon-plus')}));document.querySelectorAll('[data-faq-filter]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-faq-filter]').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('[data-faq-category]').forEach(x=>x.hidden=b.dataset.faqFilter!=='all'&&x.dataset.faqCategory!==b.dataset.faqFilter)}))});</script>
+{% endblock %}

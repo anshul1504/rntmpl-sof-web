@@ -1,0 +1,60 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% block content %}
+<section class="rnt-page-hero has-image" style="background-image:linear-gradient(rgba(0,0,0,.64),rgba(0,0,0,.64)),url('{% if sponsor_page.banner_image %}{{ sponsor_page.banner_image.url }}{% else %}{% static "website/images/cricket-video.jpg" %}{% endif %}')">
+    <p class="rnt-page-kicker">{{ sponsor_page.eyebrow }}</p>
+    <h1>{{ sponsor_page.title }}</h1>
+</section>
+
+<main class="rnt-sponsor-page">
+    <section class="rnt-sponsor-intro">
+        <div><p class="rnt-section-kicker">Brand Partnerships</p><h2>{{ sponsor_page.audience_title }}</h2><p>{{ sponsor_page.description }}</p><a href="#sponsor-form" class="rnt-sponsor-primary-link">Discuss Sponsorship <i class="feather-icon icon-arrow-right"></i></a></div>
+        <div class="rnt-sponsor-metrics">
+            <span><strong>{{ sponsor_page.audience_metric }}</strong>{{ sponsor_page.audience_label }}</span>
+            <span><strong>{{ sponsor_page.players_metric }}</strong>{{ sponsor_page.players_label }}</span>
+            <span><strong>{{ sponsor_page.events_metric }}</strong>{{ sponsor_page.events_label }}</span>
+            <span><strong>{{ sponsor_page.cities_metric }}</strong>{{ sponsor_page.cities_label }}</span>
+        </div>
+    </section>
+
+    <section class="rnt-sponsor-inventory">
+        <div class="rnt-partner-section-heading"><p class="rnt-section-kicker">Brand Visibility</p><h2>{{ sponsor_page.inventory_title }}</h2></div>
+        <div class="rnt-sponsor-inventory-grid">
+            {% for item in sponsor_inventory %}
+            <article><i class="feather-icon {{ item.icon }}"></i><h3>{{ item.title }}</h3><p>{{ item.description }}</p></article>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="rnt-sponsor-packages">
+        <div class="rnt-partner-section-heading"><p class="rnt-section-kicker">Choose Your Presence</p><h2>{{ sponsor_page.packages_title }}</h2></div>
+        <div class="rnt-sponsor-package-grid">
+            {% for package in sponsor_packages %}
+            <article>{% if package.badge %}<span>{{ package.badge }}</span>{% endif %}<h3>{{ package.name }}</h3><p>{{ package.short_description }}</p><ul>{% for feature in package.features.splitlines %}{% if feature %}<li><i class="feather-icon icon-check"></i>{{ feature }}</li>{% endif %}{% endfor %}</ul><a href="#sponsor-form">Request Proposal</a></article>
+            {% empty %}<div class="rnt-event-empty">Sponsorship packages will be published soon.</div>{% endfor %}
+        </div>
+    </section>
+
+    <section class="rnt-sponsor-process">
+        <div class="rnt-partner-section-heading"><p class="rnt-section-kicker">Activation Process</p><h2>{{ sponsor_page.process_title }}</h2></div>
+        <div class="rnt-sponsor-process-grid">
+            <div><strong>01</strong><h3>Campaign Brief</h3><p>Share target audience, markets, objectives and investment range.</p></div>
+            <div><strong>02</strong><h3>Custom Proposal</h3><p>Receive a tailored mix of event, digital and player-facing assets.</p></div>
+            <div><strong>03</strong><h3>Creative Planning</h3><p>Align messaging, branding, timelines and activation responsibilities.</p></div>
+            <div><strong>04</strong><h3>Launch &amp; Reporting</h3><p>Activate the partnership and review agreed visibility outcomes.</p></div>
+        </div>
+    </section>
+
+    {% if sponsor_logos %}<section class="rnt-partner-showcase"><p>Brands Supporting The Cricket Journey</p><div>{% for sponsor in sponsor_logos %}{% if sponsor.website_url %}<a href="{{ sponsor.website_url }}" target="_blank" rel="noopener">{% else %}<span>{% endif %}<img loading="lazy" decoding="async" src="{{ sponsor.logo.url }}" alt="{{ sponsor.name }}">{% if sponsor.website_url %}</a>{% else %}</span>{% endif %}{% endfor %}</div></section>{% endif %}
+
+    <section id="sponsor-form" class="rnt-sponsor-form-section">
+        <div class="rnt-partner-form-copy"><p class="rnt-section-kicker">Commercial Enquiry</p><h2>{{ sponsor_page.form_title }}</h2><p>Tell us about your campaign goals, audience priorities and preferred investment range.</p><div class="rnt-sponsor-form-note"><i class="feather-icon icon-shield"></i><span>Your commercial information is reviewed only by the RNTMPL partnerships team.</span></div></div>
+        <form method="post" class="rnt-partner-form" novalidate>
+            {% csrf_token %}
+            {% if form.non_field_errors %}<div class="rnt-form-error-summary">{{ form.non_field_errors }}</div>{% endif %}
+            <div class="rnt-form-grid">{% for field in form %}<div class="rnt-form-field{% if field.name == 'objectives' %} is-full{% endif %}"><label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>{{ field }}{% for error in field.errors %}<small class="rnt-field-error">{{ error }}</small>{% endfor %}</div>{% endfor %}</div>
+            <button type="submit" class="btn btn-gr rnt-contact-submit">Request Sponsorship Proposal <i class="feather-icon icon-send"></i></button>
+        </form>
+    </section>
+</main>
+{% endblock %}

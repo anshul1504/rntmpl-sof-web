@@ -1,0 +1,111 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% block content %}
+<section class="rnt-team-detail-hero">
+    <div class="rnt-team-detail-brand">
+        <div class="rnt-team-detail-logo">{% if team.logo %}<img loading="lazy" decoding="async" src="{{ team.logo.url }}" alt="{{ team.name }}">{% else %}<strong>{{ team.abbreviation|default:team.short_name|default:"RNT" }}</strong>{% endif %}</div>
+        <div class="rnt-team-detail-heading">
+            <span>{{ team.team_category|default:"Cricket Team" }}</span>
+            <h1>{{ team.name }}</h1>
+            <p><i class="feather-icon icon-map-pin"></i>{{ team.city|default:team.home_ground|default:"India" }}{% if team.team_type %} &middot; {{ team.team_type }}{% endif %}</p>
+            <div class="rnt-team-hero-actions">
+                {% if team.website %}<a href="{{ team.website }}" target="_blank" rel="noopener">Official Website <i class="feather-icon icon-external-link"></i></a>{% endif %}
+                {% if team.email %}<a href="mailto:{{ team.email }}">Contact Team <i class="feather-icon icon-mail"></i></a>{% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+<main class="rnt-team-detail-page">
+    <a class="rnt-team-back" href="{% url 'publicsite:team-list' %}"><i class="feather-icon icon-arrow-left"></i>{{ team_page.detail_back_text }}</a>
+
+    <section class="rnt-team-overview">
+        <div class="rnt-team-about">
+            <p class="rnt-section-kicker">Team Profile</p>
+            <h2>About The Team</h2>
+            <p>{{ team.description|default:"Official RNTMPL cricket team competing through structured tournaments and professional match operations." }}</p>
+            <div class="rnt-team-facts">
+                {% if team.founded_date %}<span><small>Founded</small><strong>{{ team.founded_date|date:"Y" }}</strong></span>{% endif %}
+                {% if team.home_ground %}<span><small>Home Ground</small><strong>{{ team.home_ground }}</strong></span>{% endif %}
+                {% if team_season %}<span><small>Current Season</small><strong>{{ team_season.get_season_display }} {{ team_season.year }}</strong></span>{% endif %}
+                {% if team.phone %}<span><small>Phone</small><strong>{{ team.phone }}</strong></span>{% endif %}
+            </div>
+        </div>
+        <div class="rnt-team-stat-grid">
+            <span><strong>{{ stats.matches_played|default:0 }}</strong>Matches</span>
+            <span><strong>{{ stats.matches_won|default:0 }}</strong>Wins</span>
+            <span><strong>{{ stats.matches_lost|default:0 }}</strong>Losses</span>
+            <span><strong>{{ stats.win_percentage|default:0 }}%</strong>Win Rate</span>
+        </div>
+    </section>
+
+    {% if team_season %}
+    <section class="rnt-team-leadership-section">
+        <div class="rnt-partner-section-heading"><p class="rnt-section-kicker">Leadership</p><h2>Team Management</h2></div>
+        <div class="rnt-team-leadership-cards">
+            <article><small>Captain</small><h3>{{ team_season.captain|default:"To be announced" }}</h3></article>
+            <article><small>Vice Captain</small><h3>{{ team_season.vice_captain|default:"To be announced" }}</h3></article>
+            <article><small>Head Coach</small><h3>{{ team_season.coach|default:"To be announced" }}</h3></article>
+            {% if team_season.manager %}<article><small>Team Manager</small><h3>{{ team_season.manager }}</h3></article>{% endif %}
+        </div>
+    </section>
+    {% endif %}
+
+    <section class="rnt-team-squad">
+        <div class="rnt-partner-section-heading"><p class="rnt-section-kicker">Players</p><h2>{{ team_page.squad_title }}</h2></div>
+        <div class="rnt-squad-grid">
+            {% for member in squad %}
+            <article>
+                {% if member.player.photo %}<img loading="lazy" decoding="async" src="{{ member.player.photo.url }}" alt="{{ member.player.full_name }}">{% else %}<div class="rnt-player-placeholder">{{ member.player.first_name|first }}{{ member.player.last_name|first }}</div>{% endif %}
+                <div class="rnt-squad-copy">
+                    <span>#{{ member.jersey_number|default:"--" }}</span>
+                    <h3>{{ member.player.full_name }}</h3>
+                    <p>{{ member.role|default:member.player.get_role_display }}</p>
+                    <div class="rnt-player-tags">{% if member.is_captain %}<small>Captain</small>{% elif member.is_vice_captain %}<small>Vice Captain</small>{% endif %}{% if member.is_wicket_keeper %}<small>Wicket Keeper</small>{% endif %}</div>
+                    {% if member.batting_style or member.bowling_style %}<div class="rnt-player-skills">{% if member.batting_style %}<span>{{ member.batting_style }}</span>{% endif %}{% if member.bowling_style %}<span>{{ member.bowling_style }}</span>{% endif %}</div>{% endif %}
+                </div>
+            </article>
+            {% empty %}<div class="rnt-event-empty"><h3>Squad coming soon</h3><p>Current season players will be published here.</p></div>{% endfor %}
+        </div>
+    </section>
+
+    {% if stats %}
+    <section class="rnt-team-performance">
+        <div class="rnt-partner-section-heading"><p class="rnt-section-kicker">Performance</p><h2>Team Record</h2></div>
+        <div class="rnt-team-performance-grid">
+            <article><small>Total Runs</small><strong>{{ stats.total_runs }}</strong></article>
+            <article><small>Highest Total</small><strong>{{ stats.highest_total }}</strong></article>
+            <article><small>Total Wickets</small><strong>{{ stats.total_wickets }}</strong></article>
+            <article><small>Run Rate</small><strong>{{ stats.run_rate }}</strong></article>
+            <article><small>Economy Rate</small><strong>{{ stats.economy_rate }}</strong></article>
+            <article><small>Best Bowling</small><strong>{{ stats.best_bowling_figures|default:"--" }}</strong></article>
+        </div>
+    </section>
+    {% endif %}
+
+    {% if rankings %}
+    <section class="rnt-team-rankings">
+        <div class="rnt-partner-section-heading"><p class="rnt-section-kicker">Standings</p><h2>Team Rankings</h2></div>
+        <div class="rnt-team-ranking-list">{% for ranking in rankings %}<article><strong>#{{ ranking.rank }}</strong><div><h3>{{ ranking.get_format_display }}</h3><p>{{ ranking.points }} points{% if ranking.rating %} &middot; {{ ranking.rating }} rating{% endif %}</p></div></article>{% endfor %}</div>
+    </section>
+    {% endif %}
+
+    <div class="rnt-team-two-column">
+        {% if staff %}<section class="rnt-team-staff"><div class="rnt-partner-section-heading"><p class="rnt-section-kicker">Staff</p><h2>{{ team_page.staff_title }}</h2></div><div>{% for person in staff %}<article><span>{{ person.get_staff_type_display }}</span><h3>{{ person.name }}</h3>{% if person.qualifications %}<p>{{ person.qualifications|truncatechars:90 }}</p>{% elif person.experience_years %}<p>{{ person.experience_years }} years experience</p>{% endif %}</article>{% endfor %}</div></section>{% endif %}
+        {% if achievements %}<section class="rnt-team-achievements"><div class="rnt-partner-section-heading"><p class="rnt-section-kicker">Honours</p><h2>{{ team_page.achievements_title }}</h2></div><div>{% for item in achievements %}<article><span>{{ item.achievement_date|date:"Y" }}</span><h3>{{ item.name }}</h3><p>{{ item.get_achievement_type_display }}{% if item.tournament %} &middot; {{ item.tournament.name }}{% endif %}</p></article>{% endfor %}</div></section>{% endif %}
+    </div>
+
+    {% if sponsors %}
+    <section class="rnt-team-sponsors">
+        <div class="rnt-partner-section-heading"><p class="rnt-section-kicker">Partners</p><h2>Team Sponsors</h2></div>
+        <div>{% for sponsor in sponsors %}<article>{% if sponsor.sponsor_logo %}<img loading="lazy" decoding="async" src="{{ sponsor.sponsor_logo.url }}" alt="{{ sponsor.sponsor_name }}">{% else %}<strong>{{ sponsor.sponsor_name }}</strong>{% endif %}<span>{{ sponsor.get_sponsorship_type_display }}</span></article>{% endfor %}</div>
+    </section>
+    {% endif %}
+
+    {% if related_teams %}
+    <section class="rnt-related-teams">
+        <div class="rnt-partner-section-heading"><p class="rnt-section-kicker">Explore</p><h2>More Teams</h2></div>
+        <div>{% for item in related_teams %}<a href="{% url 'publicsite:team-detail' item.pk %}"><span>{% if item.logo %}<img loading="lazy" decoding="async" src="{{ item.logo.url }}" alt="{{ item.name }}">{% else %}{{ item.abbreviation|default:"RNT" }}{% endif %}</span><div><h3>{{ item.name }}</h3><p>{{ item.city|default:item.home_ground|default:"India" }}</p></div><i class="feather-icon icon-arrow-up-right"></i></a>{% endfor %}</div>
+    </section>
+    {% endif %}
+</main>
+{% endblock %}

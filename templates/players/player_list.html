@@ -1,0 +1,135 @@
+{% extends "accounts/base.html" %}
+{% load static %}
+{% block title %}Player Registry - RNT MPL{% endblock %}
+
+{% block content %}
+<!-- Section Header -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <div>
+        <h2 class="fw-bold mb-1">Player Registry</h2>
+        <p class="text-secondary small mb-0">Manage and explore profiles, roles, and stats of players in {{ current_tenant.name }}.</p>
+    </div>
+    <a href="{% url 'players:player-create' %}" class="btn btn-primary px-4 py-2" style="background: var(--primary-gradient) !important; color: #0c0c0c !important; font-weight: 500; border: none !important;">
+        <i class="bi bi-person-plus me-1"></i> Add New Player
+    </a>
+</div>
+
+<!-- Search & Filter Card -->
+<div class="card border border-light-subtle shadow-sm mb-4">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-5">
+                <div class="position-relative">
+                    <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-secondary"></i>
+                    <input type="text" name="search" class="form-control ps-5" placeholder="Search by name or jersey..." value="{{ search_query }}">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <select name="role" class="form-select">
+                    <option value="">All Roles</option>
+                    {% for value, label in roles %}
+                        <option value="{{ value }}" {% if role_filter == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100 py-2">Filter</button>
+                <a href="{% url 'players:player-list' %}" class="btn btn-outline-secondary w-100 py-2">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Player Table/Grid -->
+<div class="card border border-light-subtle shadow-sm">
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>Player</th>
+                    <th>Jersey</th>
+                    <th>Role</th>
+                    <th>Batting Style</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for player in players %}
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                            {% if player.photo %}
+                                <img src="{{ player.photo.url }}" alt="{{ player.full_name }}" class="border border-secondary-subtle" style="width: 42px; height: 42px; object-fit: cover;">
+                            {% else %}
+                                <div class="d-flex align-items-center justify-content-center text-white fw-bold fs-6 border border-secondary-subtle" style="width: 42px; height: 42px; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;">
+                                    {{ player.first_name|slice:":1"|upper }}{{ player.last_name|slice:":1"|upper }}
+                                </div>
+                            {% endif %}
+                            <div>
+                                <a href="{% url 'players:player-detail' player.pk %}" class="fw-bold text-decoration-none text-primary">{{ player.full_name }}</a>
+                                <div class="text-muted small">{% if player.city %}{{ player.city }}, {{ player.state }}{% else %}{{ player.nationality }}{% endif %}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge bg-secondary-subtle text-secondary px-2.5 py-1.5 fw-bold">
+                            #{{ player.jersey_number|default:"—" }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge px-3 py-1.5 text-uppercase" style="font-size: 11px; background-color: rgba(37, 99, 235, 0.08) !important; color: #2563eb !important; border: 1px solid rgba(37, 99, 235, 0.2) !important;">
+                            {{ player.get_role_display }}
+                        </span>
+                    </td>
+                    <td>{{ player.get_batting_style_display }}</td>
+                    <td>
+                        <span class="badge px-2.5 py-1.5 {% if player.player_status == 'ACTIVE' %}bg-success-subtle text-success{% elif player.player_status == 'INJURED' %}bg-danger-subtle text-danger{% else %}bg-secondary-subtle text-secondary{% endif %}">
+                            {{ player.get_player_status_display }}
+                        </span>
+                    </td>
+                    <td class="text-end">
+                        <div class="d-inline-flex gap-2">
+                            <a href="{% url 'players:player-detail' player.pk %}" class="btn btn-sm btn-outline-primary" title="View Profile">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{% url 'players:player-edit' player.pk %}" class="btn btn-sm btn-outline-secondary" title="Edit Profile">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-5">
+                        <i class="bi bi-people text-muted" style="font-size: 3rem;"></i>
+                        <h5 class="fw-bold mt-3 text-secondary">No Players Found</h5>
+                        <p class="text-muted small">Try adjusting your filters or search query, or onboard a new player profile.</p>
+                        <a href="{% url 'players:player-create' %}" class="btn btn-primary mt-2">Onboard First Player</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if is_paginated %}
+<nav class="d-flex justify-content-center mt-4">
+    <ul class="pagination">
+        {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}">&laquo;</a></li>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+            <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}">{{ num }}</a>
+            </li>
+        {% endfor %}
+        {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}">&raquo;</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

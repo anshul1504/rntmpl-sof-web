@@ -1,0 +1,1 @@
+{% extends "accounts/base.html" %}{% block title %}Add Player Lot{% endblock %}{% block content %}<h2 class="fw-bold mb-4">Add Player Lot</h2><div class="card shadow-sm"><div class="card-body"><form method="post">{% csrf_token %}{{ form.as_p }}<button class="btn btn-primary">Add Lot</button></form></div></div>{% endblock %}

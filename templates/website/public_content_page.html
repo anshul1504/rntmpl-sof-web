@@ -1,0 +1,6 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% block content %}
+<section class="rnt-page-hero rnt-policy-hero has-image" style="background-image:linear-gradient(rgba(0,0,0,.68),rgba(0,0,0,.78)),url('{% if content_page.banner_image %}{{ content_page.banner_image.url }}{% else %}{% static "website/images/cricket-video.jpg" %}{% endif %}')"><p class="rnt-page-kicker">{{ content_page.eyebrow }}</p><h1>{{ content_page.title }}</h1></section>
+<main class="rnt-policy-page"><aside><span>Last Updated</span><strong>{{ content_page.updated_at|date:"d F Y" }}</strong><a href="{% url 'publicsite:contact' %}">Questions? Contact Us <i class="feather-icon icon-arrow-up-right"></i></a></aside><article>{% if content_page.summary %}<p class="rnt-policy-summary">{{ content_page.summary }}</p>{% endif %}<div class="rnt-policy-content">{{ content_page.content|linebreaks }}</div></article></main>
+{% endblock %}

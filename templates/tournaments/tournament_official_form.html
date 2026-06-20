@@ -1,0 +1,63 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block title %}Assign Match Official - {{ tournament.name }} - RNT MPL{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0" style="max-width: 800px; margin: 0 auto;">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h3 mb-1 fw-bold text-gradient">Assign Official</h1>
+            <p class="text-secondary small mb-0">Assign an official to <strong>{{ tournament.name }}</strong></p>
+        </div>
+        <a href="{% url 'tournaments:tournament-detail' tournament.id %}" class="btn btn-outline-secondary py-2 small fw-semibold"><i class="bi bi-arrow-left me-1"></i>Back to Tournament</a>
+    </div>
+
+    <div class="card premium-card border-0 shadow-sm">
+        <div class="card-body p-4">
+            <form method="post">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger border-0 mb-4" style="background-color: var(--card-bg); border-left: 4px solid var(--gold-primary) !important; color: var(--text-primary);">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <label class="form-label small fw-bold" for="{{ form.official.id_for_label }}">Select Official (Player Profile)</label>
+                        {{ form.official }}
+                        {% if form.official.errors %}
+                        <div class="text-danger small mt-1">{{ form.official.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label class="form-label small fw-bold" for="{{ form.role.id_for_label }}">Role</label>
+                        {{ form.role }}
+                        {% if form.role.errors %}
+                        <div class="text-danger small mt-1">{{ form.role.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-12">
+                        <div class="form-check form-switch bg-light p-3 rounded">
+                            {{ form.is_chief_official }}
+                            <label class="form-check-label small fw-bold ms-2" for="{{ form.is_chief_official.id_for_label }}">Chief Official / Head Umpire?</label>
+                        </div>
+                        {% if form.is_chief_official.errors %}
+                        <div class="text-danger small mt-1">{{ form.is_chief_official.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-12 d-flex justify-content-end gap-2 mt-4 border-top pt-3">
+                        <a href="{% url 'tournaments:tournament-detail' tournament.id %}" class="btn btn-outline-secondary py-2.5 small fw-semibold">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4 py-2.5 fw-bold">Assign Official</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

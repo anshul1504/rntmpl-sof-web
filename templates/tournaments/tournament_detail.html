@@ -1,0 +1,382 @@
+{% extends "accounts/base.html" %}
+{% load static %}
+{% block title %}{{ tournament.name }} - Tournament Dashboard - RNT MPL{% endblock %}
+
+{% block content %}
+<!-- Back CTA -->
+<div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <a href="{% url 'tournaments:tournament-list' %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Back to Tournaments
+    </a>
+    <div class="d-flex gap-2">
+        <a href="{% url 'tournaments:tournament-edit' tournament.pk %}" class="btn btn-sm btn-outline-primary px-3">
+            <i class="bi bi-pencil me-1"></i> Edit Tournament
+        </a>
+        <a href="{% url 'tournaments:tournament-rules' tournament.pk %}" class="btn btn-sm btn-primary px-3">
+            <i class="bi bi-sliders me-1"></i> Match Rules
+        </a>
+        {% if tournament.auction %}
+        <a href="{% url 'auctions:auction-detail' tournament.auction.pk %}" class="btn btn-sm btn-warning px-3"><i class="bi bi-hammer me-1"></i>Auction</a>
+        {% else %}
+        <a href="{% url 'auctions:auction-create' tournament.pk %}" class="btn btn-sm btn-warning px-3"><i class="bi bi-hammer me-1"></i>Create Auction</a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Premium Tournament Cover Banner -->
+<div class="card border border-light-subtle shadow-sm mb-4 overflow-hidden">
+    <div style="height: 180px; background: {% if tournament.banner_image %}url('{{ tournament.banner_image.url }}') center/cover{% else %}linear-gradient(135deg, #0f172a 0%, #1e293b 100%){% endif %}; position: relative;">
+        <!-- Glassmorphic Overlay for Title Info -->
+        <div class="position-absolute bottom-0 start-0 w-100 p-4 d-flex align-items-center gap-3 flex-wrap" style="background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 100%);">
+            {% if tournament.logo %}
+                <img src="{{ tournament.logo.url }}" alt="{{ tournament.name }}" style="width: 72px; height: 72px; object-fit: contain; background: white; border-radius: 8px; padding: 4px;">
+            {% else %}
+                <div class="d-flex align-items-center justify-content-center text-white fw-bold fs-3" style="width: 72px; height: 72px; border-radius: 8px; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;">
+                    {{ tournament.name|slice:":2"|upper }}
+                </div>
+            {% endif %}
+            <div class="text-white">
+                <span class="badge bg-primary px-2 py-1 mb-1" style="font-size: 10px;">{{ tournament.season|default:"General Season" }}</span>
+                <h3 class="fw-bold mb-0 text-white">{{ tournament.name }}</h3>
+                <p class="small text-white-50 mb-0"><i class="bi bi-geo-alt me-1"></i>{% if tournament.venue %}{{ tournament.venue }}, {% endif %}{{ tournament.city|default:"No City" }}, {{ tournament.country }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Overview Stats Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card border border-light-subtle shadow-sm h-100 text-center p-3">
+            <div class="text-secondary small" style="text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px;">Format</div>
+            <div class="fw-bold fs-5 mt-1 text-primary">{{ tournament.format.name|default:"Not Configured" }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border border-light-subtle shadow-sm h-100 text-center p-3">
+            <div class="text-secondary small" style="text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px;">Timeline</div>
+            <div class="fw-bold fs-6 mt-1 text-primary">{% if tournament.start_date %}{{ tournament.start_date|date:"d M" }} - {{ tournament.end_date|date:"d M Y" }}{% else %}—{% endif %}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border border-light-subtle shadow-sm h-100 text-center p-3">
+            <div class="text-secondary small" style="text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px;">Teams Limit</div>
+            <div class="fw-bold fs-5 mt-1 text-primary">{% if tournament.max_teams_allowed %}{{ tournament.max_teams_allowed }}{% else %}Unlimited{% endif %}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border border-light-subtle shadow-sm h-100 text-center p-3">
+            <div class="text-secondary small" style="text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px;">Prize Pool</div>
+            <div class="fw-bold fs-5 mt-1 text-primary">{% if tournament.prize_money %}₹{{ tournament.prize_money }}{% else %}—{% endif %}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Section Split -->
+<div class="row g-4">
+    <!-- Center Panel: Schedules and Standings -->
+    <div class="col-lg-8">
+        <!-- Tabbed Dashboard Navigation -->
+        <ul class="nav nav-tabs border-bottom mb-3" id="dashboardTabs" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">Overview</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="teams-tab" data-bs-toggle="tab" data-bs-target="#teams" type="button" role="tab">Teams ({{ teams|length }})</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="fixtures-tab" data-bs-toggle="tab" data-bs-target="#fixtures" type="button" role="tab">Fixtures & Results</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="standings-tab" data-bs-toggle="tab" data-bs-target="#standings" type="button" role="tab"><i class="bi bi-bar-chart-steps me-1"></i>Standings</button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="dashboardTabsContent">
+            <!-- Tab: Overview -->
+            <div class="tab-pane fade show active" id="overview" role="tabpanel">
+                <div class="card border border-light-subtle shadow-sm p-4 mb-4">
+                    <h5 class="fw-bold mb-3">Rules & Regulations</h5>
+                    <div style="white-space: pre-line;" class="text-secondary small">
+                        {{ tournament.rules_and_regulations|default:"No custom rules or guidelines provided for this tournament." }}
+                    </div>
+                </div>
+
+                <div class="card border border-light-subtle shadow-sm p-4 mb-4">
+                    <h5 class="fw-bold mb-3">Registration & Status Info</h5>
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <span class="text-secondary small">Registration Portal Opens:</span>
+                            <div class="fw-semibold small">{% if tournament.registration_start_date %}{{ tournament.registration_start_date|date:"d M Y, h:i A" }}{% else %}—{% endif %}</div>
+                        </div>
+                        <div class="col-sm-6">
+                            <span class="text-secondary small">Registration Portal Closes:</span>
+                            <div class="fw-semibold small text-danger">{% if tournament.registration_end_date %}{{ tournament.registration_end_date|date:"d M Y, h:i A" }}{% else %}—{% endif %}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Teams -->
+            <div class="tab-pane fade" id="teams" role="tabpanel">
+                <div class="card border border-light-subtle shadow-sm">
+                    <div class="card-header bg-transparent py-3 border-light-subtle d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <h5 class="fw-bold mb-0">Registered Teams</h5>
+                        <a href="{% url 'tournaments:tournament-team-create' tournament.id %}" class="btn btn-sm btn-primary"><i class="bi bi-plus-circle me-1"></i>Register Team</a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Team Name</th>
+                                    <th>Jersey Color</th>
+                                    <th>Captain</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for t in teams %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            {% if t.team.logo %}
+                                                <img src="{{ t.team.logo.url }}" alt="{{ t.team.name }}" style="width: 30px; height: 30px; object-fit: contain;">
+                                            {% endif %}
+                                            <span class="fw-semibold text-primary">{{ t.team.name }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-1">
+                                            {% if t.jersey_color %}
+                                                <div style="width: 14px; height: 14px; background: {{ t.jersey_color }}; border: 1px solid #ddd;"></div>
+                                                <span class="small text-secondary">{{ t.jersey_color }}</span>
+                                            {% else %}
+                                                —
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>{{ t.captain.full_name|default:"—" }}</td>
+                                    <td>
+                                        <span class="badge {% if t.is_verified %}bg-success-subtle text-success{% else %}bg-warning-subtle text-warning{% endif %}">
+                                            {% if t.is_verified %}Verified{% else %}Pending{% endif %}
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="{% url 'tournaments:tournament-player-create' t.id %}" class="btn btn-sm btn-outline-primary py-1 px-2 small"><i class="bi bi-person-plus me-1"></i>Add Player</a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-secondary">No teams registered in this tournament yet.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Fixtures -->
+            <div class="tab-pane fade" id="fixtures" role="tabpanel">
+                <div class="card border border-light-subtle shadow-sm">
+                    <div class="card-header bg-transparent py-3 border-light-subtle d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <h5 class="fw-bold mb-0">Match Fixtures & Results</h5>
+                        <div class="d-flex gap-2"><a href="{% url 'tournaments:fixture-generate' tournament.id %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-calendar-range me-1"></i>Generate Fixtures</a><a href="{% url 'tournaments:tournament-match-create' tournament.id %}" class="btn btn-sm btn-primary"><i class="bi bi-calendar-plus me-1"></i>Schedule Match</a></div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Match Info</th>
+                                    <th>Teams</th>
+                                    <th>Venue / City</th>
+                                    <th class="text-end">Result</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for match in matches %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold text-primary">#{{ match.match_number }}</div>
+                                        <div class="small text-secondary">{{ match.match_date|date:"d M Y, h:i A" }}</div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold">{{ match.home_team.team.name }}</div>
+                                        <div class="text-secondary small mt-1">vs</div>
+                                        <div class="fw-bold">{{ match.away_team.team.name }}</div>
+                                    </td>
+                                    <td>
+                                        <div class="small fw-semibold">{{ match.ground|default:match.venue }}</div>
+                                        <a href="{% url 'tournaments:match-setup' match.pk %}" class="btn btn-sm btn-outline-primary mt-2">Match Setup</a>
+                                        {% if not match.is_completed %}<a href="{% url 'tournaments:tournament-match-update' match.pk %}" class="btn btn-sm btn-outline-secondary mt-2">Reschedule</a>{% endif %}
+                                        <div class="small text-secondary">{{ match.city }}</div>
+                                    </td>
+                                    <td class="text-end">
+                                        {% if match.is_completed %}
+                                            <span class="badge bg-success-subtle text-success">Completed</span>
+                                            <div class="small fw-bold mt-1 text-primary">
+                                                {% if match.winner %}{{ match.winner.team.name }} won{% else %}Draw/Tie{% endif %}
+                                            </div>
+                                        {% else %}
+                                            <span class="badge bg-secondary-subtle text-secondary">Scheduled</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-secondary">No matches scheduled for this tournament yet.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Standings -->
+            <div class="tab-pane fade" id="standings" role="tabpanel">
+                {% if standings_by_group %}
+                    {% for grp_data in standings_by_group %}
+                    <div class="card border border-light-subtle shadow-sm mb-4">
+                        <div class="card-header bg-transparent py-3 border-light-subtle d-flex justify-content-between align-items-center">
+                            <h5 class="fw-bold mb-0"><i class="bi bi-grid-3x3 me-2 text-primary"></i>{{ grp_data.group.name }}</h5>
+                            <span class="badge bg-secondary-subtle text-secondary small">{{ grp_data.standings|length }} team(s)</span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 44px;" class="text-center">#</th>
+                                        <th>Team</th>
+                                        <th class="text-center">P</th>
+                                        <th class="text-center">W</th>
+                                        <th class="text-center">L</th>
+                                        <th class="text-center">D</th>
+                                        <th class="text-center fw-bold text-primary">PTS</th>
+                                        <th class="text-center">NRR</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for entry in grp_data.standings %}
+                                    <tr {% if forloop.counter == 1 %}style="background: rgba(37,99,235,0.04);"{% endif %}>
+                                        <td class="text-center">
+                                            {% if forloop.counter == 1 %}
+                                                <span class="badge bg-warning text-dark fw-bold">1</span>
+                                            {% elif forloop.counter == 2 %}
+                                                <span class="badge bg-secondary text-white fw-bold">2</span>
+                                            {% elif forloop.counter == 3 %}
+                                                <span class="badge" style="background:#cd7f32; color:white;">3</span>
+                                            {% else %}
+                                                <span class="text-secondary small">{{ forloop.counter }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                {% if entry.team.team.logo %}
+                                                    <img src="{{ entry.team.team.logo.url }}" alt="{{ entry.team.team.name }}" style="width: 28px; height: 28px; object-fit: contain;">
+                                                {% else %}
+                                                    <div class="d-flex align-items-center justify-content-center fw-bold" style="width: 28px; height: 28px; background: rgba(37,99,235,0.1); color: #2563eb; font-size: 11px;">{{ entry.team.team.name|slice:":2"|upper }}</div>
+                                                {% endif %}
+                                                <span class="fw-semibold small">{{ entry.team.team.name }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="text-center small">{{ entry.matches_played }}</td>
+                                        <td class="text-center small text-success fw-semibold">{{ entry.matches_won }}</td>
+                                        <td class="text-center small text-danger fw-semibold">{{ entry.matches_lost }}</td>
+                                        <td class="text-center small text-secondary">{{ entry.matches_drawn }}</td>
+                                        <td class="text-center fw-bold text-primary">{{ entry.points|floatformat:0 }}</td>
+                                        <td class="text-center small {% if entry.net_run_rate >= 0 %}text-success{% else %}text-danger{% endif %}">{{ entry.net_run_rate|floatformat:3 }}</td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr><td colspan="8" class="text-center py-4 text-secondary">No standings data yet.</td></tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <div class="card border border-light-subtle shadow-sm p-5 text-center">
+                    <i class="bi bi-bar-chart-steps text-muted" style="font-size: 3rem;"></i>
+                    <h6 class="mt-3 text-muted">No Standings Data</h6>
+                    <p class="small text-secondary">Standings will appear here once matches are played and completed via the Live Scoring console.</p>
+                    <a href="{% url 'scoring:match-list' %}" class="btn btn-sm btn-primary mt-2"><i class="bi bi-broadcast me-1"></i>Go to Live Scoring</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Side Panel: Sponsors & Awards -->
+    <div class="col-lg-4">
+        <!-- Officials Panel -->
+        <div class="card border border-light-subtle shadow-sm p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0"><i class="bi bi-person-badge me-1 text-primary"></i> Match Officials</h5>
+                <a href="{% url 'tournaments:tournament-official-create' tournament.id %}" class="btn btn-sm btn-outline-primary py-0.5 px-2 small"><i class="bi bi-plus-circle me-1"></i>Assign</a>
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for o in officials %}
+                <li class="list-group-item bg-transparent px-0 d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-semibold text-primary small">{{ o.official.full_name }}</div>
+                        <div class="text-secondary" style="font-size: 10px;">{{ o.get_role_display }}</div>
+                    </div>
+                    {% if o.is_chief_official %}
+                        <span class="badge bg-primary-subtle text-primary" style="font-size: 8px;">Chief</span>
+                    {% endif %}
+                </li>
+                {% empty %}
+                <li class="list-group-item bg-transparent px-0 text-center py-3 text-secondary small">No officials assigned.</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <!-- Sponsors Panel -->
+        <div class="card border border-light-subtle shadow-sm p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0"><i class="bi bi-award me-1 text-primary"></i> Sponsors</h5>
+                <a href="{% url 'tournaments:tournament-sponsor-create' tournament.id %}" class="btn btn-sm btn-outline-primary py-0.5 px-2 small"><i class="bi bi-plus-circle me-1"></i>Add</a>
+            </div>
+            <div class="d-flex flex-wrap gap-3 align-items-center">
+                {% for sponsor in sponsors %}
+                <div class="text-center border p-2 rounded bg-light" style="width: calc(50% - 8px);">
+                    {% if sponsor.logo %}
+                        <img src="{{ sponsor.logo.url }}" alt="{{ sponsor.name }}" style="max-height: 40px; max-width: 100px; object-fit: contain;">
+                    {% else %}
+                        <div class="fw-bold small">{{ sponsor.name }}</div>
+                    {% endif %}
+                    <div class="text-secondary small mt-1" style="font-size: 9px;">{{ sponsor.sponsorship_level }}</div>
+                </div>
+                {% empty %}
+                <div class="w-100 text-center py-3 text-secondary small">No sponsors listed.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Awards Panel -->
+        <div class="card border border-light-subtle shadow-sm p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0"><i class="bi bi-trophy me-1 text-primary"></i> Awards</h5>
+                <a href="{% url 'tournaments:tournament-award-create' tournament.id %}" class="btn btn-sm btn-outline-primary py-0.5 px-2 small"><i class="bi bi-plus-circle me-1"></i>Add</a>
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for award in awards %}
+                <li class="list-group-item bg-transparent px-0 d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-semibold text-primary small">{{ award.name }}</div>
+                        <div class="text-secondary" style="font-size: 10px;">Winner: {{ award.winner.full_name|default:"TBD" }}</div>
+                    </div>
+                    {% if award.prize_amount %}
+                        <span class="badge bg-success-subtle text-success" style="font-size: 8px;">₹{{ award.prize_amount }}</span>
+                    {% endif %}
+                </li>
+                {% empty %}
+                <li class="list-group-item bg-transparent px-0 text-center py-3 text-secondary small">No awards created.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

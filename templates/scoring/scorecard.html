@@ -1,0 +1,245 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block title %}Match Scorecard - {{ match.home_team.team.name }} vs {{ match.away_team.team.name }} - RNT MPL{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <!-- Breadcrumbs & Actions -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h3 mb-1 fw-bold text-gradient">Match Scorecard</h1>
+            <p class="text-secondary small mb-0">{{ match.tournament.name }} &bull; {{ match.venue|default:"Unknown Venue" }}</p>
+        </div>
+        <div>
+            <a href="{% url 'scoring:match-list' %}" class="btn btn-outline-secondary py-2 small fw-semibold"><i class="bi bi-arrow-left me-1"></i>Back to Matches</a>
+            {% if not match.is_completed %}
+            <a href="{% url 'scoring:live-score' match.id %}" class="btn btn-primary py-2 small fw-semibold ms-2"><i class="bi bi-broadcast me-1"></i>Go to Scoring Console</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Match Summary Card -->
+    <div class="card premium-card border-0 mb-4 shadow-sm">
+        <div class="card-body p-4">
+            <div class="row align-items-center g-4">
+                <div class="col-12 col-md-5 text-center text-md-end">
+                    <h5 class="fw-bold mb-1">{{ match.home_team.team.name }}</h5>
+                    <h3 class="fw-extrabold text-primary mb-0">{{ match.home_team_score|default:"0/0" }}</h3>
+                </div>
+                <div class="col-12 col-md-2 text-center py-2 bg-light border-0 rounded shadow-xs">
+                    <span class="badge bg-secondary-subtle text-secondary mb-1">VS</span>
+                    <div class="small text-secondary">{{ match.match_date|date:"d M Y" }}</div>
+                </div>
+                <div class="col-12 col-md-5 text-center text-md-start">
+                    <h5 class="fw-bold mb-1">{{ match.away_team.team.name }}</h5>
+                    <h3 class="fw-extrabold text-info mb-0">{{ match.away_team_score|default:"0/0" }}</h3>
+                </div>
+            </div>
+            {% if match.winner %}
+            <hr class="my-3 opacity-10">
+            <div class="text-center text-success fw-semibold">
+                <i class="bi bi-trophy-fill me-1"></i> Winner: {{ match.winner.team.name }} (Match Completed)
+            </div>
+            {% elif live_state.is_live %}
+            <hr class="my-3 opacity-10">
+            <div class="text-center text-danger fw-semibold animate-pulse">
+                <i class="bi bi-broadcast me-1"></i> Match is LIVE now. Currently Innings {{ live_state.current_innings.innings_number }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Innings Tabs -->
+    <div class="card premium-card border-0 shadow-sm mb-4">
+        <div class="card-header bg-transparent border-0 pt-3 pb-0 px-3">
+            <ul class="nav nav-tabs border-bottom-0" id="inningsTab" role="tablist">
+                {% for sc in scorecards %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if forloop.first %}active{% endif %} fw-semibold border-0 px-4 py-2.5" 
+                            id="innings-{{ sc.innings.id }}-tab" 
+                            data-bs-toggle="tab" 
+                            data-bs-target="#innings-{{ sc.innings.id }}" 
+                            type="button" role="tab" 
+                            aria-controls="innings-{{ sc.innings.id }}" 
+                            aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">
+                        Innings {{ sc.innings.innings_number }}: {{ sc.innings.batting_team.team.name }}
+                    </button>
+                </li>
+                {% empty %}
+                <li class="nav-item">
+                    <span class="nav-link disabled border-0 text-secondary">No Innings Started Yet</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="card-body p-3">
+            <div class="tab-content" id="inningsTabContent">
+                {% for sc in scorecards %}
+                <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" 
+                     id="innings-{{ sc.innings.id }}" 
+                     role="tabpanel" 
+                     aria-labelledby="innings-{{ sc.innings.id }}-tab">
+                    
+                    <!-- Innings Summary Header -->
+                    <div class="d-flex flex-wrap justify-content-between align-items-center bg-light p-3 border-0 rounded mb-4">
+                        <div>
+                            <span class="small text-secondary">Total Score</span>
+                            <h4 class="mb-0 fw-bold">{{ sc.innings.total_runs }}/{{ sc.innings.total_wickets }} <span class="fs-6 fw-normal text-secondary">({{ sc.innings.total_overs_bowled }} Ov)</span></h4>
+                        </div>
+                        <div class="text-md-end mt-2 mt-md-0">
+                            <span class="badge bg-secondary py-1.5 px-3">Run Rate: {{ sc.innings.run_rate }}</span>
+                            {% if sc.innings.target_runs %}
+                            <span class="badge bg-primary py-1.5 px-3 ms-2">Target: {{ sc.innings.target_runs }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Batting Card Table -->
+                    <h5 class="fw-bold mb-3"><i class="bi bi-lightning-charge text-warning me-1"></i>Batting</h5>
+                    <div class="table-responsive mb-4">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Batter</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Runs</th>
+                                    <th class="text-end">Balls</th>
+                                    <th class="text-end">4s</th>
+                                    <th class="text-end">6s</th>
+                                    <th class="text-end">SR</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for b in sc.batting %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">{{ b.player.full_name }}</div>
+                                    </td>
+                                    <td class="text-secondary small">{{ b.how_out_description|default:"not out" }}</td>
+                                    <td class="text-end fw-bold">{{ b.runs }}</td>
+                                    <td class="text-end">{{ b.balls_faced }}</td>
+                                    <td class="text-end">{{ b.fours }}</td>
+                                    <td class="text-end">{{ b.sixes }}</td>
+                                    <td class="text-end text-primary fw-semibold">{{ b.strike_rate }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-secondary py-3">No batting records available for this innings.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Extras Breakdown -->
+                    <div class="bg-light p-3 border-0 rounded mb-4 small text-secondary">
+                        <strong>Extras:</strong> {{ sc.innings.total_extras }} (wides, no balls, byes, leg-byes)
+                    </div>
+
+                    <!-- Bowling Card Table -->
+                    <h5 class="fw-bold mb-3"><i class="bi bi-shield text-info me-1"></i>Bowling</h5>
+                    <div class="table-responsive mb-4">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Bowler</th>
+                                    <th class="text-end">Overs</th>
+                                    <th class="text-end">Maidens</th>
+                                    <th class="text-end">Runs</th>
+                                    <th class="text-end">Wickets</th>
+                                    <th class="text-end">Economy</th>
+                                    <th class="text-end">Dots</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for bowler in sc.bowling %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">{{ bowler.player.full_name }}</div>
+                                    </td>
+                                    <td class="text-end">{{ bowler.overs_bowled }}</td>
+                                    <td class="text-end">{{ bowler.maidens }}</td>
+                                    <td class="text-end">{{ bowler.runs_conceded }}</td>
+                                    <td class="text-end fw-bold text-success">{{ bowler.wickets }}</td>
+                                    <td class="text-end text-info fw-semibold">{{ bowler.economy_rate }}</td>
+                                    <td class="text-end">{{ bowler.dots }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-secondary py-3">No bowling records available for this innings.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Fall of Wickets Timeline -->
+                    <h5 class="fw-bold mb-3"><i class="bi bi-chevron-down text-danger me-1"></i>Fall of Wickets</h5>
+                    <div class="d-flex flex-wrap gap-2 mb-2">
+                        {% for f in sc.fall_of_wickets %}
+                        <div class="bg-light border px-3 py-2 rounded text-center small">
+                            <div class="fw-bold">{{ f.wicket_number }}-{{ f.team_score_at_wicket }}</div>
+                            <div class="text-secondary" style="font-size: 11px;">{{ f.batter.full_name }} ({{ f.overs_at_wicket }} ov)</div>
+                        </div>
+                        {% empty %}
+                        <div class="text-secondary small py-2">No wickets fallen.</div>
+                        {% endfor %}
+                    </div>
+
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Match Commentary Log -->
+    <div class="card premium-card border-0 shadow-sm">
+        <div class="card-header bg-transparent border-0 pt-3 pb-0 px-3">
+            <h5 class="fw-bold mb-0"><i class="bi bi-chat-left-text text-primary me-1"></i>Match Commentary</h5>
+        </div>
+        <div class="card-body p-3">
+            <div class="list-group list-group-flush" style="max-height: 400px; overflow-y: auto;">
+                {% for comm in commentaries %}
+                <div class="list-group-item bg-transparent border-bottom px-1 py-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="badge bg-light text-secondary border px-2 py-0.5 small">{{ comm.ball.over_number }}.{{ comm.ball.ball_number_in_over }}</span>
+                        <span class="small text-secondary">{{ comm.created_at|time:"H:i:s" }}</span>
+                    </div>
+                    <p class="mb-0 text-primary small">{{ comm.text }}</p>
+                </div>
+                {% empty %}
+                <div class="text-center text-secondary py-4 small">No commentary available.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .nav-tabs .nav-link {
+        color: var(--text-secondary);
+        background: transparent;
+        border-radius: 8px 8px 0 0 !important;
+        margin-right: 4px;
+        transition: all 0.2s;
+    }
+    .nav-tabs .nav-link:hover {
+        color: var(--gold-primary);
+        background-color: var(--gold-light);
+    }
+    .nav-tabs .nav-link.active {
+        color: var(--gold-primary);
+        background-color: var(--card-bg);
+        border-bottom: 2px solid var(--gold-primary) !important;
+    }
+    .animate-pulse {
+        animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.4; }
+        100% { opacity: 1; }
+    }
+</style>
+{% endblock %}

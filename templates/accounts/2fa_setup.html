@@ -1,0 +1,25 @@
+{% extends "accounts/base.html" %}
+{% block title %}Setup 2FA - RNT MPL{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-body p-4 text-center">
+                <h3 class="fw-bold mb-3">Two-Factor Authentication</h3>
+                {% if device.confirmed %}
+                <div class="mb-3"><i class="bi bi-shield-check text-success" style="font-size: 3rem;"></i></div>
+                <p class="text-success fw-medium">2FA is already enabled on your account.</p>
+                {% else %}
+                <p class="text-muted mb-4">Scan the QR code below with your authenticator app (Google Authenticator, Authy, etc.)</p>
+                <div class="mb-4 p-3 bg-light rounded-4 d-inline-block">
+                    <img src="{{ provisioning_uri }}" alt="QR Code" class="img-fluid" style="max-width: 200px;">
+                </div>
+                <p class="small text-muted mb-2">Or enter this secret key manually:</p>
+                <code class="d-block p-2 bg-light rounded mb-4">{{ secret_key }}</code>
+                <a href="{% url 'accounts:2fa-verify' %}" class="btn btn-success w-100">I've scanned the code — verify</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

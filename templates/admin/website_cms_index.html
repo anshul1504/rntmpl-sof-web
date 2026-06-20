@@ -1,0 +1,26 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{% block extrastyle %}{{ block.super }}
+<style>
+.cms-wrap{max-width:1500px;margin:0 auto}.cms-hero{display:flex;align-items:center;justify-content:space-between;gap:30px;margin-bottom:25px;padding:30px;border-radius:16px;background:linear-gradient(120deg,#111,#292929);color:#fff}.cms-hero span{color:#ffc928;font-size:11px;letter-spacing:.16em}.cms-hero h1{margin:7px 0;color:#fff;font-size:32px}.cms-hero p{max-width:760px;margin:0;color:#bbb}.cms-hero a{flex:0 0 auto;padding:12px 17px;border-radius:8px;background:#ffc928;color:#111;font-weight:600}.cms-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.cms-group{overflow:hidden;border:1px solid #ddd;border-radius:13px;background:#fff}.cms-group-head{display:flex;gap:14px;align-items:flex-start;padding:20px;border-bottom:1px solid #e7e7e7;background:#fafafa}.cms-group-head i{display:flex;width:42px;height:42px;align-items:center;justify-content:center;border-radius:10px;background:#111;color:#ffc928}.cms-group-head h2{margin:0;color:#222;font-size:18px}.cms-group-head p{margin:5px 0 0;color:#777;font-size:12px}.cms-model-list{padding:7px 18px}.cms-model{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:13px 2px;border-bottom:1px solid #eee}.cms-model:last-child{border:0}.cms-model>a:first-child{color:#222;font-weight:600}.cms-actions{display:flex;gap:8px}.cms-actions a{padding:6px 9px;border-radius:6px;background:#edf1f5;color:#334;font-size:11px}.cms-actions a.add{background:#ffc928;color:#111}.cms-form-group{border-color:#f1c45d}.cms-form-group .cms-group-head{background:#fff8e5}.cms-note{margin-top:22px;padding:14px 18px;border-left:4px solid #ffc928;background:#fff9e9;color:#665719;font-size:12px}
+@media(max-width:900px){.cms-groups{grid-template-columns:1fr}.cms-hero{align-items:flex-start;flex-direction:column}}@media(max-width:520px){.cms-model{align-items:flex-start;flex-direction:column}.cms-actions{width:100%}.cms-actions a{flex:1;text-align:center}}
+</style>
+{% endblock %}
+{% block content %}
+<div class="cms-wrap">
+  <section class="cms-hero"><div><span>PUBLIC WEBSITE CONTROL</span><h1>Website Content Manager</h1><p>Pages, content publishing and submitted forms are organised into separate modules for clean website operations.</p></div><a href="/" target="_blank">Open Public Website ↗</a></section>
+  <div class="cms-groups">
+    {% for module in cms_modules %}
+    <section class="cms-group{% if module.title == 'Forms & Enquiries' %} cms-form-group{% endif %}">
+      <div class="cms-group-head"><i class="{{ module.icon }}"></i><div><h2>{{ module.title }}</h2><p>{{ module.description }}</p></div></div>
+      <div class="cms-model-list">
+        {% for item in module.items %}
+        <div class="cms-model"><a href="{{ item.url }}">{{ item.name }}</a><div class="cms-actions"><a href="{{ item.url }}">Manage</a>{% if item.can_add %}<a class="add" href="{{ item.add_url }}">Add New</a>{% endif %}</div></div>
+        {% empty %}<div class="cms-model">No items available.</div>{% endfor %}
+      </div>
+    </section>
+    {% endfor %}
+  </div>
+  <div class="cms-note"><strong>Forms are separate:</strong> Contact, partner, sponsor and job submissions are operational records. Page content can be edited independently without mixing submitted user data.</div>
+</div>
+{% endblock %}

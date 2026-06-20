@@ -1,0 +1,238 @@
+{% extends "accounts/base.html" %}
+{% load static %}
+{% block title %}User Profile - RNT MPL{% endblock %}
+
+{% block content %}
+<!-- Section Header -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <div>
+        <h2 class="fw-bold mb-1">My Account Profile</h2>
+        <p class="text-secondary small mb-0">Your cricket platform identity, contact details, KYC and verification status on RNT MPL.</p>
+    </div>
+    <a href="{% url 'accounts:profile-edit' %}" class="btn btn-primary px-4 py-2">
+        <i class="bi bi-pencil-square me-1"></i> Edit Profile
+    </a>
+</div>
+
+<!-- Profile Header Card -->
+<div class="card border border-light-subtle shadow-sm mb-4">
+    <div class="card-body p-4">
+        <div class="d-flex align-items-center gap-4 flex-wrap">
+            <!-- Avatar -->
+            <div class="position-relative flex-shrink-0">
+                {% if profile_user.photo %}
+                    <img src="{{ profile_user.photo.url }}" alt="{{ profile_user.full_name }}" class="border border-secondary-subtle p-1" style="width: 100px; height: 100px; object-fit: cover;">
+                {% else %}
+                    <div class="d-flex align-items-center justify-content-center text-white fw-bold fs-2 border border-secondary-subtle" style="width: 100px; height: 100px; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;">
+                        {{ profile_user.full_name|slice:":1"|upper|default:"U" }}
+                    </div>
+                {% endif %}
+                <span class="position-absolute bottom-0 end-0 badge {% if profile_user.is_verified %}bg-success{% else %}bg-secondary{% endif %} p-2 border border-white" title="{% if profile_user.is_verified %}Verified{% else %}Unverified{% endif %}">
+                    <i class="bi {% if profile_user.is_verified %}bi-patch-check-fill{% else %}bi-question-circle{% endif %}"></i>
+                </span>
+            </div>
+            <!-- Name & Meta -->
+            <div class="flex-grow-1">
+                <h3 class="fw-bold mb-1">{{ profile_user.full_name|default:profile_user.email }}</h3>
+                <p class="text-muted small mb-2">{{ profile_user.email }} {% if profile_user.username %}· @{{ profile_user.username }}{% endif %}</p>
+                <div class="d-flex flex-wrap gap-2">
+                    <span class="badge px-3 py-2 text-uppercase" style="font-size: 11px; letter-spacing: 1px; background-color: rgba(37, 99, 235, 0.08) !important; color: #2563eb !important; border: 1px solid rgba(37, 99, 235, 0.2) !important;">
+                        <i class="bi bi-shield-fill-check me-1"></i> {{ profile_user.get_user_type_display }}
+                    </span>
+                    <span class="badge px-3 py-2" style="font-size: 11px; background-color: rgba(0,0,0,0.04) !important; color: var(--text-secondary) !important; border: 1px solid var(--border-color) !important;">
+                        <i class="bi bi-calendar-event me-1"></i> Joined {{ profile_user.date_joined|date:"M d, Y" }}
+                    </span>
+                    <span class="badge px-3 py-2 {% if profile_user.is_2fa_enabled %}text-success{% else %}text-warning{% endif %}" style="font-size: 11px; background-color: {% if profile_user.is_2fa_enabled %}rgba(34,197,94,0.08){% else %}rgba(234,179,8,0.08){% endif %} !important; border: 1px solid {% if profile_user.is_2fa_enabled %}rgba(34,197,94,0.2){% else %}rgba(234,179,8,0.2){% endif %} !important;">
+                        <i class="bi bi-shield-lock me-1"></i> 2FA {{ profile_user.is_2fa_enabled|yesno:"Active,Inactive" }}
+                    </span>
+                </div>
+            </div>
+            <!-- Quick Stats -->
+            <div class="d-none d-md-flex gap-4 text-center flex-shrink-0">
+                <div>
+                    <div class="fs-4 fw-bold text-primary">{{ profile_user.usertenant_set.count|default:"0" }}</div>
+                    <div class="text-secondary small">Tenants</div>
+                </div>
+                <div class="vr opacity-25"></div>
+                <div>
+                    <div class="fs-4 fw-bold text-dark">{{ profile_user.subscription_plan|title }}</div>
+                    <div class="text-secondary small">Plan</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Personal Details -->
+<div class="card border border-light-subtle shadow-sm mb-4">
+    <div class="card-header bg-transparent py-3 border-bottom border-light-subtle">
+        <h5 class="fw-bold mb-0"><i class="bi bi-person-lines-fill me-2 text-primary"></i>Personal Details</h5>
+    </div>
+    <div class="card-body p-4">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="p-3 border border-light-subtle">
+                    <div class="text-secondary small mb-1"><i class="bi bi-person me-1"></i>Full Name</div>
+                    <div class="fw-bold">{{ profile_user.full_name|default:"—" }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-3 border border-light-subtle">
+                    <div class="text-secondary small mb-1"><i class="bi bi-at me-1"></i>Username</div>
+                    <div class="fw-bold">{{ profile_user.username|default:"—" }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-3 border border-light-subtle">
+                    <div class="text-secondary small mb-1"><i class="bi bi-envelope me-1"></i>Email Address</div>
+                    <div class="fw-bold">{{ profile_user.email|default:"—" }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-3 border border-light-subtle">
+                    <div class="text-secondary small mb-1"><i class="bi bi-telephone me-1"></i>Primary Phone</div>
+                    <div class="fw-bold">{{ profile_user.phone|default:"—" }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-3 border border-light-subtle">
+                    <div class="text-secondary small mb-1"><i class="bi bi-telephone-plus me-1"></i>Alternate Phone</div>
+                    <div class="fw-bold">{{ profile_user.alternate_phone|default:"—" }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-3 border border-light-subtle">
+                    <div class="text-secondary small mb-1"><i class="bi bi-globe me-1"></i>Website</div>
+                    <div class="fw-bold">{% if profile_user.website %}<a href="{{ profile_user.website }}" target="_blank" class="text-primary text-decoration-none">{{ profile_user.website }}</a>{% else %}—{% endif %}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-3 border border-light-subtle">
+                    <div class="text-secondary small mb-1"><i class="bi bi-gender-ambiguous me-1"></i>Gender</div>
+                    <div class="fw-bold">{{ profile_user.get_gender_display|default:"—" }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-3 border border-light-subtle">
+                    <div class="text-secondary small mb-1"><i class="bi bi-calendar me-1"></i>Date of Birth</div>
+                    <div class="fw-bold">{{ profile_user.date_of_birth|date:"F d, Y"|default:"—" }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-3 border border-light-subtle">
+                    <div class="text-secondary small mb-1"><i class="bi bi-briefcase me-1"></i>Platform Role</div>
+                    <div class="fw-bold">{{ profile_user.get_user_type_display|default:"—" }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Address Details -->
+<div class="card border border-light-subtle shadow-sm mb-4">
+    <div class="card-header bg-transparent py-3 border-bottom border-light-subtle">
+        <h5 class="fw-bold mb-0"><i class="bi bi-geo-alt me-2 text-primary"></i>Address Details</h5>
+    </div>
+    <div class="card-body p-4">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="p-3 border border-light-subtle">
+                    <div class="text-secondary small mb-1"><i class="bi bi-house me-1"></i>Address Line 1</div>
+                    <div class="fw-bold">{{ profile_user.address_line1|default:"—" }}</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="p-3 border border-light-subtle">
+                    <div class="text-secondary small mb-1"><i class="bi bi-signpost me-1"></i>Address Line 2</div>
+                    <div class="fw-bold">{{ profile_user.address_line2|default:"—" }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 border border-light-subtle">
+                    <div class="text-secondary small mb-1"><i class="bi bi-pin-map me-1"></i>City</div>
+                    <div class="fw-bold">{{ profile_user.city|default:"—" }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 border border-light-subtle">
+                    <div class="text-secondary small mb-1"><i class="bi bi-map me-1"></i>District</div>
+                    <div class="fw-bold">{{ profile_user.district|default:"—" }}</div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="p-3 border border-light-subtle">
+                    <div class="text-secondary small mb-1"><i class="bi bi-geo me-1"></i>State</div>
+                    <div class="fw-bold">{{ profile_user.state|default:"—" }}</div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="p-3 border border-light-subtle">
+                    <div class="text-secondary small mb-1"><i class="bi bi-mailbox me-1"></i>PIN Code</div>
+                    <div class="fw-bold">{{ profile_user.pincode|default:"—" }}</div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="p-3 border border-light-subtle">
+                    <div class="text-secondary small mb-1"><i class="bi bi-flag me-1"></i>Country</div>
+                    <div class="fw-bold">{{ profile_user.country|default:"India" }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Verification & KYC -->
+<div class="card border border-light-subtle shadow-sm mb-4">
+    <div class="card-header bg-transparent py-3 border-bottom border-light-subtle">
+        <h5 class="fw-bold mb-0"><i class="bi bi-shield-check me-2 text-primary"></i>Verification & KYC Status</h5>
+    </div>
+    <div class="card-body p-4">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <div class="p-3 border border-light-subtle d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-secondary small mb-1">Email</div>
+                        <div class="fw-bold">{% if profile_user.email_verified %}Verified{% else %}Pending{% endif %}</div>
+                    </div>
+                    <span class="fs-4 {% if profile_user.email_verified %}text-success{% else %}text-warning{% endif %}">
+                        <i class="bi {% if profile_user.email_verified %}bi-check-circle-fill{% else %}bi-exclamation-circle-fill{% endif %}"></i>
+                    </span>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 border border-light-subtle d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-secondary small mb-1">Phone</div>
+                        <div class="fw-bold">{% if profile_user.phone_verified %}Verified{% else %}Pending{% endif %}</div>
+                    </div>
+                    <span class="fs-4 {% if profile_user.phone_verified %}text-success{% else %}text-warning{% endif %}">
+                        <i class="bi {% if profile_user.phone_verified %}bi-check-circle-fill{% else %}bi-exclamation-circle-fill{% endif %}"></i>
+                    </span>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 border border-light-subtle d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-secondary small mb-1">Aadhaar</div>
+                        <div class="fw-bold">{% if profile_user.aadhaar_verified %}KYC Done{% else %}Not Submitted{% endif %}</div>
+                    </div>
+                    <span class="fs-4 {% if profile_user.aadhaar_verified %}text-success{% else %}text-muted{% endif %}">
+                        <i class="bi {% if profile_user.aadhaar_verified %}bi-shield-fill-check{% else %}bi-shield-slash{% endif %}"></i>
+                    </span>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 border border-light-subtle d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-secondary small mb-1">PAN</div>
+                        <div class="fw-bold">{% if profile_user.pan_verified %}KYC Done{% else %}Not Submitted{% endif %}</div>
+                    </div>
+                    <span class="fs-4 {% if profile_user.pan_verified %}text-success{% else %}text-muted{% endif %}">
+                        <i class="bi {% if profile_user.pan_verified %}bi-shield-fill-check{% else %}bi-shield-slash{% endif %}"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

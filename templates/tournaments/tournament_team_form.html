@@ -1,0 +1,88 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block title %}Register Team - {{ tournament.name }} - RNT MPL{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0" style="max-width: 800px; margin: 0 auto;">
+    <!-- Header Page Title -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h3 mb-1 fw-bold text-gradient">Register Team</h1>
+            <p class="text-secondary small mb-0">Add a participating team to <strong>{{ tournament.name }}</strong></p>
+        </div>
+        <a href="{% url 'tournaments:tournament-detail' tournament.id %}" class="btn btn-outline-secondary py-2 small fw-semibold"><i class="bi bi-arrow-left me-1"></i>Back to Tournament</a>
+    </div>
+
+    <!-- Registration Form Card -->
+    <div class="card premium-card border-0 shadow-sm">
+        <div class="card-body p-4">
+            <form method="post">
+                {% csrf_token %}
+                
+                <!-- Errors -->
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger border-0 mb-4" style="background-color: var(--card-bg); border-left: 4px solid var(--gold-primary) !important; color: var(--text-primary);">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+
+                <div class="row g-3">
+                    <!-- Team -->
+                    <div class="col-12">
+                        <label class="form-label small fw-bold" for="{{ form.team.id_for_label }}">Select Team</label>
+                        {{ form.team }}
+                        {% if form.team.errors %}
+                        <div class="text-danger small mt-1">{{ form.team.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Jersey Color -->
+                    <div class="col-12 col-md-6">
+                        <label class="form-label small fw-bold" for="{{ form.jersey_color.id_for_label }}">Jersey Color</label>
+                        {{ form.jersey_color }}
+                        {% if form.jersey_color.errors %}
+                        <div class="text-danger small mt-1">{{ form.jersey_color.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Is Verified -->
+                    <div class="col-12 col-md-6 d-flex align-items-center mt-md-4">
+                        <div class="form-check form-switch bg-light p-3 rounded w-100">
+                            {{ form.is_verified }}
+                            <label class="form-check-label small fw-bold ms-2" for="{{ form.is_verified.id_for_label }}">Roster Verified?</label>
+                        </div>
+                        {% if form.is_verified.errors %}
+                        <div class="text-danger small mt-1">{{ form.is_verified.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Captain -->
+                    <div class="col-12 col-md-6">
+                        <label class="form-label small fw-bold" for="{{ form.captain.id_for_label }}">Team Captain</label>
+                        {{ form.captain }}
+                        {% if form.captain.errors %}
+                        <div class="text-danger small mt-1">{{ form.captain.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Vice Captain -->
+                    <div class="col-12 col-md-6">
+                        <label class="form-label small fw-bold" for="{{ form.vice_captain.id_for_label }}">Team Vice Captain</label>
+                        {{ form.vice_captain }}
+                        {% if form.vice_captain.errors %}
+                        <div class="text-danger small mt-1">{{ form.vice_captain.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Submit Actions -->
+                    <div class="col-12 d-flex justify-content-end gap-2 mt-4 border-top pt-3">
+                        <a href="{% url 'tournaments:tournament-detail' tournament.id %}" class="btn btn-outline-secondary py-2.5 small fw-semibold">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4 py-2.5 fw-bold">Register Team</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

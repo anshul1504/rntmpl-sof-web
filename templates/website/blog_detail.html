@@ -1,0 +1,79 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% block content %}
+<main class="rnt-article-page">
+    <header class="rnt-article-hero">
+        <div class="rnt-article-hero-inner">
+            <a href="{% url 'publicsite:blog-list' %}" class="rnt-blog-back"><i class="feather-icon icon-arrow-left"></i>{{ blog_settings.detail_back_text }}</a>
+            <span class="rnt-article-category">{{ blog_settings.detail_category }}</span>
+            <h1>{{ post.title }}</h1>
+            {% if post.excerpt %}<p class="rnt-article-excerpt">{{ post.excerpt }}</p>{% endif %}
+            <div class="rnt-article-meta">
+                <span><i class="feather-icon icon-calendar"></i>{{ post.published_at|date:"d M Y" }}</span>
+                <span><i class="feather-icon icon-file-text"></i>{{ blog_settings.detail_author_label }}</span>
+            </div>
+        </div>
+    </header>
+
+    {% if post.featured_image %}
+        <figure class="rnt-article-cover">
+            <img loading="lazy" decoding="async" src="{{ post.featured_image.url }}" alt="{{ post.title }}">
+        </figure>
+    {% endif %}
+
+    <section class="rnt-article-layout">
+        <aside class="rnt-article-aside">
+            <span>Published</span>
+            <strong>{{ post.published_at|date:"d M Y" }}</strong>
+            <div class="rnt-article-aside-line"></div>
+            <span>Category</span>
+            <strong>Cricket News</strong>
+        </aside>
+
+        <article class="rnt-article-body">
+            <div class="rnt-article-content">{{ post.content }}</div>
+
+            {% if post.gallery_images.all %}
+                <section class="rnt-article-gallery">
+                    <div class="rnt-article-gallery-heading">
+                        <span>{{ blog_settings.gallery_eyebrow }}</span>
+                        <h2>{{ blog_settings.gallery_title }}</h2>
+                    </div>
+                    <div class="rnt-article-gallery-grid">
+                        {% for item in post.gallery_images.all %}
+                            <figure class="{% if forloop.first %}is-large{% endif %}">
+                                <img loading="lazy" decoding="async" src="{{ item.image.url }}" alt="{{ item.caption|default:post.title }}">
+                                {% if item.caption %}<figcaption>{{ item.caption }}</figcaption>{% endif %}
+                            </figure>
+                        {% endfor %}
+                    </div>
+                </section>
+            {% endif %}
+
+            <div class="rnt-article-cta">
+                <div><span>{{ blog_settings.detail_category }}</span><h3>{{ blog_settings.detail_cta_title }}</h3></div>
+                <a href="{% url 'publicsite:player-registration' %}" class="btn btn-gr">{{ blog_settings.detail_cta_button_text }}</a>
+            </div>
+        </article>
+    </section>
+</main>
+
+{% if related_posts %}
+<section class="rnt-related-posts">
+    <div class="rnt-blog-container">
+        <div class="rnt-related-heading">
+            <div><p class="rnt-section-kicker">{{ blog_settings.related_eyebrow }}</p><h2>{{ blog_settings.related_title }}</h2></div>
+            <a href="{% url 'publicsite:blog-list' %}" class="rnt-blog-view-all">View All Blogs <i class="feather-icon icon-arrow-right"></i></a>
+        </div>
+        <div class="rnt-blog-grid">
+            {% for item in related_posts %}
+            <article class="rnt-blog-card rnt-clickable-card" tabindex="0" role="link" data-href="{% url 'publicsite:blog-detail' item.slug %}">
+                <div class="rnt-blog-image">{% if item.featured_image %}<img loading="lazy" decoding="async" src="{{ item.featured_image.url }}" alt="{{ item.title }}">{% else %}<img loading="lazy" decoding="async" src="{% static 'website/images/blog6.jpg' %}" alt="{{ item.title }}">{% endif %}</div>
+                <div class="rnt-blog-body"><div class="rnt-blog-meta">{{ item.published_at|date:"d M Y" }}</div><h3>{{ item.title }}</h3><p>{{ item.excerpt|truncatechars:110 }}</p><a href="{% url 'publicsite:blog-detail' item.slug %}" class="rnt-blog-read">{{ blog_settings.read_more_text }}</a></div>
+            </article>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+{% endblock %}

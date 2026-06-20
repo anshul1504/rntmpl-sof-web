@@ -1,0 +1,34 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% block content %}
+<section class="rnt-page-hero has-image" style="background-image:linear-gradient(rgba(0,0,0,.66),rgba(0,0,0,.66)),url('{% if team_page.banner_image %}{{ team_page.banner_image.url }}{% else %}{% static "website/images/cricket-video.jpg" %}{% endif %}')">
+    <p class="rnt-page-kicker">{{ team_page.eyebrow }}</p>
+    <h1>{{ team_page.title }}</h1>
+</section>
+<main class="rnt-team-page">
+    <div class="rnt-team-toolbar">
+        <form method="get">
+            <label><i class="feather-icon icon-search"></i><input type="search" name="search" value="{{ search_query }}" placeholder="{{ team_page.search_placeholder }}"></label>
+            <select name="category" aria-label="Filter by category"><option value="">{{ team_page.all_categories_text }}</option>{% for category in team_categories %}<option value="{{ category.pk }}"{% if category_filter == category.pk|stringformat:"s" %} selected{% endif %}>{{ category.name }}</option>{% endfor %}</select>
+            <button type="submit">Filter</button>
+            {% if search_query or category_filter %}<a href="{% url 'publicsite:team-list' %}">Reset</a>{% endif %}
+        </form>
+    </div>
+    <div class="rnt-team-grid">
+        {% for team in teams %}
+        <article class="rnt-team-card rnt-clickable-card" tabindex="0" role="link" data-href="{% url 'publicsite:team-detail' team.pk %}">
+            <div class="rnt-team-logo">
+                {% if team.logo %}<img loading="lazy" decoding="async" src="{{ team.logo.url }}" alt="{{ team.name }}">{% else %}<strong>{{ team.abbreviation|default:team.short_name|default:"RNT" }}</strong>{% endif %}
+            </div>
+            <div class="rnt-team-card-body">
+                <div class="rnt-team-card-meta"><span>{{ team.team_category|default:"Cricket Team" }}</span>{% if team.abbreviation %}<span>{{ team.abbreviation }}</span>{% endif %}</div>
+                <h2>{{ team.name }}</h2>
+                <p><i class="feather-icon icon-map-pin"></i>{{ team.city|default:team.home_ground|default:"India" }}</p>
+                <a href="{% url 'publicsite:team-detail' team.pk %}">View Team <i class="feather-icon icon-arrow-up-right"></i></a>
+            </div>
+        </article>
+        {% empty %}<div class="rnt-event-empty"><h3>{{ team_page.empty_title }}</h3><p>{{ team_page.empty_description }}</p></div>{% endfor %}
+    </div>
+    {% if is_paginated %}<nav class="rnt-blog-pagination" aria-label="Team pagination">{% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}&search={{ search_query }}&category={{ category_filter }}"><i class="feather-icon icon-chevron-left"></i></a>{% endif %}{% for number in paginator.page_range %}{% if number == page_obj.number %}<span class="current">{{ number }}</span>{% else %}<a href="?page={{ number }}&search={{ search_query }}&category={{ category_filter }}">{{ number }}</a>{% endif %}{% endfor %}{% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}&search={{ search_query }}&category={{ category_filter }}"><i class="feather-icon icon-chevron-right"></i></a>{% endif %}</nav>{% endif %}
+</main>
+{% endblock %}

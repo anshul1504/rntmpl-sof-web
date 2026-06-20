@@ -1,0 +1,33 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% block content %}
+<section class="rnt-live-page-hero">
+    <div><div><p class="rnt-section-kicker">RNTMPL Live</p><h1>Live Cricket Scores</h1><p>Follow official match scores, current batters, bowling figures and chase requirements as the action unfolds.</p></div><span><i></i>{{ live_matches|length }} Match{{ live_matches|length|pluralize:"es" }} Live</span></div>
+</section>
+<main class="rnt-live-page">
+    {% if live_matches %}
+    <section class="rnt-live-grid">
+        {% for match in live_matches %}
+        <article class="rnt-live-card">
+            <div class="rnt-live-card-head"><div><span>{{ match.tournament.name }}</span><small>{% if match.match_number %}Match {{ match.match_number }} · {% endif %}{{ match.tournament.format.name|default:"Cricket" }}</small></div><b><i></i>Live</b></div>
+            <div class="rnt-live-team-score">
+                <div class="{% if match.live_state.batting_team_id == match.home_team_id %}batting{% endif %}"><span>{% if match.home_team.team.logo %}<img loading="lazy" decoding="async" src="{{ match.home_team.team.logo.url }}" alt="{{ match.home_team.team.name }}">{% else %}{{ match.home_team.team.abbreviation|default:"TEAM" }}{% endif %}</span><h2>{{ match.home_team.team.name }}</h2><strong>{% if match.live_state.batting_team_id == match.home_team_id %}{{ match.live_state.runs }}/{{ match.live_state.wickets }}{% else %}{{ match.home_team_score|default:"Yet to bat" }}{% endif %}</strong></div>
+                <em>VS</em>
+                <div class="{% if match.live_state.batting_team_id == match.away_team_id %}batting{% endif %}"><span>{% if match.away_team.team.logo %}<img loading="lazy" decoding="async" src="{{ match.away_team.team.logo.url }}" alt="{{ match.away_team.team.name }}">{% else %}{{ match.away_team.team.abbreviation|default:"TEAM" }}{% endif %}</span><h2>{{ match.away_team.team.name }}</h2><strong>{% if match.live_state.batting_team_id == match.away_team_id %}{{ match.live_state.runs }}/{{ match.live_state.wickets }}{% else %}{{ match.away_team_score|default:"Yet to bat" }}{% endif %}</strong></div>
+            </div>
+            <div class="rnt-live-current"><div><span>Overs</span><strong>{{ match.live_state.overs_bowled }}</strong></div><div><span>Run Rate</span><strong>{{ match.live_state.run_rate }}</strong></div>{% if match.live_state.target_runs %}<div><span>Target</span><strong>{{ match.live_state.target_runs }}</strong></div>{% endif %}{% if match.live_state.runs_required %}<div><span>Need</span><strong>{{ match.live_state.runs_required }}{% if match.live_state.balls_remaining %} off {{ match.live_state.balls_remaining }}{% endif %}</strong></div>{% endif %}</div>
+            {% if match.live_state.striker or match.live_state.current_bowler %}<div class="rnt-live-players">{% if match.live_state.striker %}<span><small>On Strike</small><strong>{{ match.live_state.striker.full_name }}</strong></span>{% endif %}{% if match.live_state.non_striker %}<span><small>Non-Striker</small><strong>{{ match.live_state.non_striker.full_name }}</strong></span>{% endif %}{% if match.live_state.current_bowler %}<span><small>Bowler</small><strong>{{ match.live_state.current_bowler.full_name }}</strong></span>{% endif %}</div>{% endif %}
+            {% if match.live_state.recent_balls %}<div class="rnt-recent-balls"><span>This Over</span><div>{% for ball in match.live_state.recent_balls %}<b>{{ ball }}</b>{% endfor %}</div></div>{% endif %}
+            <div class="rnt-live-card-foot"><span><i class="feather-icon icon-map-pin"></i>{{ match.venue|default:match.city|default:"Venue TBA" }}</span><small>Updated {{ match.live_state.last_updated|timesince }} ago</small><a href="{% url 'publicsite:scorecard' match.pk %}">Full Scorecard <i class="feather-icon icon-arrow-right"></i></a></div>
+        </article>
+        {% endfor %}
+    </section>
+    {% else %}
+    <section class="rnt-live-empty"><i class="feather-icon icon-radio"></i><h2>No Match Is Live Right Now</h2><p>Live scores will appear here automatically when official scoring starts.</p><div><a href="{% url 'publicsite:match-center' %}">View All Matches</a><a href="{% url 'publicsite:event-list' %}">Explore Events</a></div></section>
+    {% endif %}
+    <div class="rnt-live-secondary">
+        {% if upcoming_matches %}<section><div class="rnt-match-section-heading"><div><p class="rnt-section-kicker">Coming Up</p><h2>Upcoming Matches</h2></div><a href="{% url 'publicsite:match-center' %}?status=upcoming">View All</a></div><div>{% for match in upcoming_matches %}<a href="{% url 'publicsite:scorecard' match.pk %}"><time><strong>{{ match.match_date|date:"d"|default:"--" }}</strong>{{ match.match_date|date:"M"|default:"TBA" }}</time><div><h3>{{ match.home_team.team.name }} vs {{ match.away_team.team.name }}</h3><p>{{ match.tournament.name }} · {{ match.venue|default:"Venue TBA" }}</p></div><i class="feather-icon icon-arrow-up-right"></i></a>{% endfor %}</div></section>{% endif %}
+        {% if recent_results %}<section><div class="rnt-match-section-heading"><div><p class="rnt-section-kicker">Latest</p><h2>Recent Results</h2></div><a href="{% url 'publicsite:match-center' %}?status=completed">View All</a></div><div>{% for match in recent_results %}<a href="{% url 'publicsite:scorecard' match.pk %}"><span>Result</span><div><h3>{{ match.home_team.team.name }} vs {{ match.away_team.team.name }}</h3><p>{% if match.winner %}{{ match.winner.team.name }} won{% else %}Match completed{% endif %}</p></div><i class="feather-icon icon-arrow-up-right"></i></a>{% endfor %}</div></section>{% endif %}
+    </div>
+</main>
+{% endblock %}

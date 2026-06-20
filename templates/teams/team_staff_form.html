@@ -1,0 +1,31 @@
+{% extends "accounts/base.html" %}
+{% block title %}{% if object %}Edit Staff Member{% else %}Add Staff Member{% endif %}{% endblock %}
+{% block content %}
+<div class="mb-4">
+    <a href="{% url 'teams:team-detail' team_season.team.pk %}" class="btn btn-sm btn-outline-secondary mb-3"><i class="bi bi-arrow-left"></i> Back to Team</a>
+    <h2 class="fw-bold">{% if object %}Edit Staff Member{% else %}Add Team Staff{% endif %}</h2>
+    <p class="text-secondary">{{ team_season.team.name }} · {{ team_season.get_season_display }} {{ team_season.year }}</p>
+</div>
+<div class="card shadow-sm border-light-subtle">
+    <div class="card-body p-4">
+        <form method="post">{% csrf_token %}
+            <div class="row g-3">
+                {% for field in form %}
+                <div class="{% if field.name == 'notes' or field.name == 'qualifications' %}col-12{% elif field.field.widget.input_type == 'checkbox' %}col-md-3{% else %}col-md-4{% endif %}">
+                    {% if field.field.widget.input_type == 'checkbox' %}
+                    <div class="form-check mt-4">{{ field }} <label class="form-check-label">{{ field.label }}</label></div>
+                    {% else %}
+                    <label class="form-label fw-semibold">{{ field.label }}{% if field.field.required %} *{% endif %}</label>{{ field }}
+                    {% endif %}
+                    {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+            <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                <a href="{% url 'teams:team-detail' team_season.team.pk %}" class="btn btn-outline-secondary">Cancel</a>
+                <button class="btn btn-primary px-4">Save Staff Member</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

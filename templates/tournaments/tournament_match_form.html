@@ -1,0 +1,95 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block title %}{% if is_reschedule %}Reschedule{% else %}Schedule{% endif %} Match - {{ tournament.name }} - RNT MPL{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0" style="max-width: 800px; margin: 0 auto;">
+    <!-- Header Page Title -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h3 mb-1 fw-bold text-gradient">{% if is_reschedule %}Reschedule Fixture{% else %}Schedule Match{% endif %}</h1>
+            <p class="text-secondary small mb-0">{% if is_reschedule %}Update match date, venue or teams{% else %}Create a new fixture{% endif %} for <strong>{{ tournament.name }}</strong></p>
+        </div>
+        <a href="{% url 'tournaments:tournament-detail' tournament.id %}" class="btn btn-outline-secondary py-2 small fw-semibold"><i class="bi bi-arrow-left me-1"></i>Back to Tournament</a>
+    </div>
+
+    <!-- Match Schedule Form Card -->
+    <div class="card premium-card border-0 shadow-sm">
+        <div class="card-body p-4">
+            <form method="post">
+                {% csrf_token %}
+                
+                <!-- Errors -->
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger border-0 mb-4" style="background-color: var(--card-bg); border-left: 4px solid var(--gold-primary) !important; color: var(--text-primary);">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+
+                <div class="row g-3">
+                    <!-- Home Team -->
+                    <div class="col-12 col-md-6">
+                        <label class="form-label small fw-bold" for="{{ form.home_team.id_for_label }}">Home Team</label>
+                        {{ form.home_team }}
+                        {% if form.home_team.errors %}
+                        <div class="text-danger small mt-1">{{ form.home_team.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Away Team -->
+                    <div class="col-12 col-md-6">
+                        <label class="form-label small fw-bold" for="{{ form.away_team.id_for_label }}">Away Team</label>
+                        {{ form.away_team }}
+                        {% if form.away_team.errors %}
+                        <div class="text-danger small mt-1">{{ form.away_team.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Match Date -->
+                    <div class="col-12 col-md-6">
+                        <label class="form-label small fw-bold" for="{{ form.match_date.id_for_label }}">Match Date & Time</label>
+                        {{ form.match_date }}
+                        {% if form.match_date.errors %}
+                        <div class="text-danger small mt-1">{{ form.match_date.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Match Number -->
+                    <div class="col-12 col-md-6">
+                        <label class="form-label small fw-bold" for="{{ form.match_number.id_for_label }}">Match Number</label>
+                        {{ form.match_number }}
+                        {% if form.match_number.errors %}
+                        <div class="text-danger small mt-1">{{ form.match_number.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Venue -->
+                    <div class="col-12 col-md-6">
+                        <label class="form-label small fw-bold" for="{{ form.venue_record.id_for_label }}">Venue</label>
+                        {{ form.venue_record }}
+                        {% if form.venue_record.errors %}
+                        <div class="text-danger small mt-1">{{ form.venue_record.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Ground -->
+                    <div class="col-12 col-md-6">
+                        <label class="form-label small fw-bold" for="{{ form.ground_record.id_for_label }}">Ground</label>
+                        {{ form.ground_record }}
+                        {% if form.ground_record.errors %}
+                        <div class="text-danger small mt-1">{{ form.ground_record.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Submit Actions -->
+                    <div class="col-12 d-flex justify-content-end gap-2 mt-4 border-top pt-3">
+                        <a href="{% url 'tournaments:tournament-detail' tournament.id %}" class="btn btn-outline-secondary py-2.5 small fw-semibold">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4 py-2.5 fw-bold">{% if is_reschedule %}Save Reschedule{% else %}Schedule Match{% endif %}</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

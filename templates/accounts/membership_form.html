@@ -1,0 +1,6 @@
+{% extends "accounts/base.html" %}
+{% block title %}{% if view.kwargs.pk %}Update Member{% else %}Add Member{% endif %}{% endblock %}
+{% block content %}
+<div class="mb-4"><a href="{% url 'accounts:role-staff' %}" class="btn btn-sm btn-outline-secondary mb-3">← Roles & Staff</a><h2 class="fw-bold">{% if view.kwargs.pk %}Update Member Role{% else %}Add Organization Member{% endif %}</h2><p class="text-secondary">Users must already have a registered RNT MPL account.</p></div>
+<div class="card shadow-sm"><div class="card-body p-4"><form method="post">{% csrf_token %}{% for field in form %}<div class="mb-3">{% if field.field.widget.input_type == 'checkbox' %}<div class="form-check">{{ field }} <label class="form-check-label">{{ field.label }}</label></div>{% else %}<label class="form-label fw-semibold">{{ field.label }}</label>{{ field }}{% endif %}{% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</div>{% endfor %}<div class="text-end border-top pt-3"><button class="btn btn-primary px-4">Save Member</button></div></form></div></div>
+{% endblock %}

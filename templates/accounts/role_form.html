@@ -1,0 +1,6 @@
+{% extends "accounts/base.html" %}
+{% block title %}Create Role{% endblock %}
+{% block content %}
+<div class="mb-4"><a href="{% url 'accounts:role-staff' %}" class="btn btn-sm btn-outline-secondary mb-3">← Roles & Staff</a><h2 class="fw-bold">Create Organization Role</h2><p class="text-secondary">Choose a standard operational role and customize its display details.</p></div>
+<div class="card shadow-sm"><div class="card-body p-4"><form method="post">{% csrf_token %}{% for field in form %}<div class="mb-3"><label class="form-label fw-semibold">{{ field.label }}</label>{{ field }}{% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</div>{% endfor %}<div class="text-end border-top pt-3"><button class="btn btn-primary px-4">Create Role</button></div></form></div></div>
+{% endblock %}

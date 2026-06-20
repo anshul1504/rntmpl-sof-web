@@ -1,0 +1,32 @@
+{% extends "accounts/auth_base.html" %}
+{% load static %}
+
+{% block title %}Register - RNT MPL{% endblock %}
+
+{% block auth_content %}
+<div class="mb-4 text-center"><span class="rnt-auth-kicker">{% if request.session.registration_type == 'PLAYER' %}Player Journey Â· Account Step{% else %}Create Account{% endif %}</span><h4 class="text-dark fw-medium mb-1">{% if request.session.registration_type == 'PLAYER' %}Secure Your Player Account{% else %}Create your account{% endif %}</h4><p class="text-muted small">{% if request.session.registration_type == 'PLAYER' %}Your cricket details are saved. Create login credentials to continue to payment.{% else %}Join the RNTMPL cricket ecosystem.{% endif %}</p></div>
+
+<form method="post" novalidate><input type="hidden" name="registration_type" value="{{ request.session.registration_type|default:'GENERAL' }}">
+    {% csrf_token %}
+    
+    {% for field in form %}
+        <div class="mb-3">
+            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}
+                <div class="text-danger small mt-1"><i class="bi bi-exclamation-circle-fill"></i> {{ field.errors|striptags }}</div>
+            {% endif %}
+            {% if field.help_text %}
+                <div class="form-text small text-muted">{{ field.help_text|safe }}</div>
+            {% endif %}
+        </div>
+    {% endfor %}
+
+    <button type="submit" class="btn btn-primary-custom w-100 btn-lg mb-3 mt-2">Create account</button>
+</form>
+
+<div class="text-center">
+    <span class="text-muted small">Already have an account?</span>
+    <a href="{% url 'accounts:login' %}" class="auth-link small ms-1">Sign in</a>
+</div>
+{% endblock %}

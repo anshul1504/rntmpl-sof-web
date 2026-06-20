@@ -1,0 +1,33 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% block content %}
+<section class="rnt-page-hero has-image" style="background-image:linear-gradient(rgba(0,0,0,.64),rgba(0,0,0,.64)),url('{% if gallery_page.banner_image %}{{ gallery_page.banner_image.url }}{% else %}{% static "website/images/cricket-video.jpg" %}{% endif %}')">
+    <p class="rnt-page-kicker">{{ gallery_page.eyebrow }}</p>
+    <h1>{{ gallery_page.title }}</h1>
+</section>
+
+<main class="rnt-gallery-page">
+    <div class="rnt-gallery-intro">
+        <p>{{ gallery_page.description }}</p>
+        <nav class="rnt-gallery-filters" aria-label="Gallery categories">
+            <a href="{% url 'publicsite:gallery' %}" class="{% if not category_filter %}active{% endif %}">{{ gallery_page.all_filter_text }}</a>
+            {% for value, label in category_choices %}<a href="?category={{ value }}" class="{% if category_filter == value %}active{% endif %}">{{ label }}</a>{% endfor %}
+        </nav>
+    </div>
+
+    <div class="rnt-gallery-grid">
+        {% for item in gallery_items %}
+        <a class="rnt-gallery-item my-image-links{% if item.is_featured %} is-featured{% endif %}" data-gall="public-gallery" href="{{ item.image.url }}" title="{{ item.caption|default:item.title }}">
+            <img loading="lazy" decoding="async" src="{{ item.image.url }}" alt="{{ item.title|default:'RNTMPL cricket gallery' }}">
+            <div class="rnt-gallery-overlay">
+                <span>{{ item.get_category_display }}</span>
+                <h2>{{ item.title|default:"RNTMPL Cricket" }}</h2>
+                {% if item.event_name or item.captured_on %}<p>{% if item.event_name %}{{ item.event_name }}{% endif %}{% if item.event_name and item.captured_on %} · {% endif %}{% if item.captured_on %}{{ item.captured_on|date:"d M Y" }}{% endif %}</p>{% endif %}
+            </div>
+        </a>
+        {% empty %}<div class="rnt-event-empty"><i class="feather-icon icon-image"></i><h3>{{ gallery_page.empty_title }}</h3><p>{{ gallery_page.empty_description }}</p></div>{% endfor %}
+    </div>
+
+    {% if is_paginated %}<nav class="rnt-blog-pagination">{% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}&category={{ category_filter }}"><i class="feather-icon icon-chevron-left"></i></a>{% endif %}{% for number in paginator.page_range %}{% if number == page_obj.number %}<span class="current">{{ number }}</span>{% else %}<a href="?page={{ number }}&category={{ category_filter }}">{{ number }}</a>{% endif %}{% endfor %}{% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}&category={{ category_filter }}"><i class="feather-icon icon-chevron-right"></i></a>{% endif %}</nav>{% endif %}
+</main>
+{% endblock %}
