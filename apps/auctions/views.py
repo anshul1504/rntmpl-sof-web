@@ -164,8 +164,22 @@ class AuctionLotCloseView(LoginRequiredMixin, CapabilityRequiredMixin, View):
                 if lot.current_price > franchise.purse_remaining:
                     messages.error(request, 'Franchise purse is insufficient.')
                     return redirect('auctions:auction-room', pk=lot.pk)
+                if franchise.players_bought >= lot.auction.max_squad_size:
+                    messages.error(request, 'Franchise has reached the auction squad limit.')
+                    return redirect('auctions:auction-room', pk=lot.pk)
+                existing_registration = TournamentPlayer.objects.filter(
+                    tournament_team__tournament=lot.auction.tournament,
+                    player=lot.player,
+                    is_deleted=False,
+                ).exclude(tournament_team=franchise.tournament_team)
+                if existing_registration.exists():
+                    messages.error(
+                        request,
+                        'This player is already assigned to another team in the tournament.',
+                    )
+                    return redirect('auctions:auction-room', pk=lot.pk)
                 franchise.purse_spent += lot.current_price
-                franchise.save()
+                franchise.save(update_fields=['purse_spent', 'updated_at'])
                 lot.status = AuctionLot.Status.SOLD
                 lot.winner = franchise
                 lot.sold_price = lot.current_price

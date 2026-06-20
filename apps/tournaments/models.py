@@ -467,10 +467,12 @@ class MatchSetup(BaseModel):
         rules = getattr(self.match.tournament, 'rules', None)
         required = rules.players_per_side if rules else 11
         teams = (self.match.home_team_id, self.match.away_team_id)
-        return all(
+        teams_ready = all(
             self.playing_xi.filter(tournament_team_id=team_id, is_substitute=False).count() == required
             for team_id in teams
         )
+        duties = set(self.official_assignments.values_list('duty', flat=True))
+        return teams_ready and {'UMPIRE', 'SCORER'}.issubset(duties)
 
     def __str__(self):
         return f"Setup: {self.match}"

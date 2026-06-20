@@ -74,9 +74,9 @@ def update_points_table(match):
 
         # Points configuration from tournament format (fallback to win=2, draw/tie=1)
         fmt = match.tournament.format
-        pts_win = fmt.points_for_win if fmt else Decimal('2.00')
-        pts_draw = fmt.points_for_draw if fmt else Decimal('1.00')
-        pts_loss = fmt.points_for_loss if fmt else Decimal('0.00')
+        pts_win = Decimal(str(fmt.points_for_win)) if fmt else Decimal('2.00')
+        pts_draw = Decimal(str(fmt.points_for_draw)) if fmt else Decimal('1.00')
+        pts_loss = Decimal(str(fmt.points_for_loss)) if fmt else Decimal('0.00')
 
         for m in team_matches:
             # Determine winner/loser

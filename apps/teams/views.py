@@ -41,6 +41,23 @@ def get_active_tenant_season(request, pk):
     )
 
 
+def sync_team_season_squad(season):
+    """Keep denormalized squad leadership and size consistent."""
+    active_members = season.teamsquad_players.filter(
+        is_deleted=False, is_active=True
+    )
+    captain = active_members.filter(is_captain=True).select_related('player').first()
+    vice_captain = active_members.filter(
+        is_vice_captain=True
+    ).select_related('player').first()
+    season.squad_size = active_members.count()
+    season.captain = captain.player if captain else None
+    season.vice_captain = vice_captain.player if vice_captain else None
+    season.save(
+        update_fields=['squad_size', 'captain', 'vice_captain', 'updated_at']
+    )
+
+
 class TeamListView(LoginRequiredMixin, ListView):
     model = Team
     template_name = 'teams/team_list.html'
@@ -241,16 +258,16 @@ class TeamSquadCreateView(LoginRequiredMixin, CapabilityRequiredMixin, CreateVie
         return response
 
     def _sync_season(self, season):
-        season.squad_size = season.teamsquad_players.filter(is_deleted=False, is_active=True).count()
-        season.save(update_fields=['squad_size', 'updated_at'])
         member = self.object
         if member.is_captain:
-            season.teamsquad_players.exclude(pk=member.pk).update(is_captain=False)
-            season.captain = member.player
+            season.teamsquad_players.exclude(pk=member.pk).update(
+                is_captain=False
+            )
         if member.is_vice_captain:
-            season.teamsquad_players.exclude(pk=member.pk).update(is_vice_captain=False)
-            season.vice_captain = member.player
-        season.save(update_fields=['captain', 'vice_captain', 'updated_at'])
+            season.teamsquad_players.exclude(pk=member.pk).update(
+                is_vice_captain=False
+            )
+        sync_team_season_squad(season)
 
     def get_success_url(self):
         return reverse('teams:team-detail', args=[self.get_season().team_id])
@@ -284,14 +301,11 @@ class TeamSquadUpdateView(LoginRequiredMixin, CapabilityRequiredMixin, UpdateVie
     def form_valid(self, form):
         response = super().form_valid(form)
         season = self.object.team_season
-        season.squad_size = season.teamsquad_players.filter(is_deleted=False, is_active=True).count()
         if self.object.is_captain:
             season.teamsquad_players.exclude(pk=self.object.pk).update(is_captain=False)
-            season.captain = self.object.player
         if self.object.is_vice_captain:
             season.teamsquad_players.exclude(pk=self.object.pk).update(is_vice_captain=False)
-            season.vice_captain = self.object.player
-        season.save(update_fields=['squad_size', 'captain', 'vice_captain', 'updated_at'])
+        sync_team_season_squad(season)
         messages.success(self.request, 'Squad member updated successfully.')
         return response
 
@@ -311,12 +325,7 @@ class TeamSquadRemoveView(LoginRequiredMixin, CapabilityRequiredMixin, View):
         )
         season = member.team_season
         member.delete()
-        season.squad_size = season.teamsquad_players.filter(is_deleted=False, is_active=True).count()
-        if season.captain_id == member.player_id:
-            season.captain = None
-        if season.vice_captain_id == member.player_id:
-            season.vice_captain = None
-        season.save(update_fields=['squad_size', 'captain', 'vice_captain', 'updated_at'])
+        sync_team_season_squad(season)
         messages.success(request, 'Player removed from the squad.')
         return redirect('teams:team-detail', pk=season.team_id)
 

@@ -39,11 +39,13 @@ def rebuild_innings_projections(innings):
         .order_by('ball_number_in_innings')
     )
 
-    BatterInnings.objects.filter(innings=innings).delete()
-    BowlerFigures.objects.filter(innings=innings).delete()
-    FallOfWicket.objects.filter(innings=innings).delete()
-    OverSummary.objects.filter(innings=innings).delete()
-    Partnership.objects.filter(innings=innings).delete()
+    # These are rebuildable projections. Hard-delete them so database
+    # uniqueness constraints do not conflict with recreated rows.
+    BatterInnings.objects.filter(innings=innings).hard_delete()
+    BowlerFigures.objects.filter(innings=innings).hard_delete()
+    FallOfWicket.objects.filter(innings=innings).hard_delete()
+    OverSummary.objects.filter(innings=innings).hard_delete()
+    Partnership.objects.filter(innings=innings).hard_delete()
 
     batter_order = {}
     bowler_order = {}

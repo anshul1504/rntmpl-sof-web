@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
@@ -503,6 +504,8 @@ class MatchSetupView(LoginRequiredMixin, CapabilityRequiredMixin, FormView):
     def dispatch(self, request, *args, **kwargs):
         self.match = get_active_tenant_match(request, kwargs['pk'])
         self.setup, _ = MatchSetup.objects.get_or_create(match=self.match)
+        if request.method == 'POST' and self.setup.lifecycle != MatchSetup.Lifecycle.SCHEDULED:
+            raise PermissionDenied('Locked or active match setup cannot be changed.')
         return super().dispatch(request, *args, **kwargs)
 
     def get_form_kwargs(self):
@@ -538,6 +541,8 @@ class MatchPlayingXIView(LoginRequiredMixin, CapabilityRequiredMixin, FormView):
     def dispatch(self, request, *args, **kwargs):
         self.match = get_active_tenant_match(request, kwargs['pk'])
         self.setup, _ = MatchSetup.objects.get_or_create(match=self.match)
+        if request.method == 'POST' and self.setup.lifecycle != MatchSetup.Lifecycle.SCHEDULED:
+            raise PermissionDenied('Locked or active playing XIs cannot be changed.')
         return super().dispatch(request, *args, **kwargs)
 
     def get_form_kwargs(self):
@@ -581,6 +586,8 @@ class MatchOfficialAssignmentCreateView(LoginRequiredMixin, CapabilityRequiredMi
     def dispatch(self, request, *args, **kwargs):
         self.match = get_active_tenant_match(request, kwargs['pk'])
         self.setup, _ = MatchSetup.objects.get_or_create(match=self.match)
+        if request.method == 'POST' and self.setup.lifecycle != MatchSetup.Lifecycle.SCHEDULED:
+            raise PermissionDenied('Locked or active official assignments cannot be changed.')
         return super().dispatch(request, *args, **kwargs)
 
     def get_form_kwargs(self):

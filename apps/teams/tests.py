@@ -2,7 +2,9 @@
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from apps.accounts.models import Role, Tenant, UserTenant
-from apps.teams.models import Team
+from apps.players.models import PlayerProfile
+from apps.teams.models import Team, TeamSeason, TeamSquad
+from apps.teams.views import sync_team_season_squad
 
 User = get_user_model()
 
@@ -106,5 +108,35 @@ class TeamFrontendViewsTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Mumbai Lions')
         self.assertNotContains(response, 'Retired XI')
+
+    def test_squad_sync_keeps_size_and_leadership_consistent(self):
+        season = TeamSeason.objects.create(
+            team=self.team, year=2026, season='WINTER'
+        )
+        captain = PlayerProfile.objects.create(
+            tenant=self.tenant, first_name='Captain', last_name='One'
+        )
+        deputy = PlayerProfile.objects.create(
+            tenant=self.tenant, first_name='Deputy', last_name='Two'
+        )
+        captain_member = TeamSquad.objects.create(
+            team_season=season, player=captain, is_captain=True
+        )
+        TeamSquad.objects.create(
+            team_season=season, player=deputy, is_vice_captain=True
+        )
+
+        sync_team_season_squad(season)
+        season.refresh_from_db()
+        self.assertEqual(season.squad_size, 2)
+        self.assertEqual(season.captain, captain)
+        self.assertEqual(season.vice_captain, deputy)
+
+        captain_member.is_active = False
+        captain_member.save(update_fields=['is_active'])
+        sync_team_season_squad(season)
+        season.refresh_from_db()
+        self.assertEqual(season.squad_size, 1)
+        self.assertIsNone(season.captain)
 
 
