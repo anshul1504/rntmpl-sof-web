@@ -221,7 +221,7 @@ class Command(BaseCommand):
             ('MS', 'Dhoni', PlayerRole.WICKET_KEEPER, BattingStyle.RIGHT_HAND, True, False, 7),
             ('Surya', 'Yadav', PlayerRole.BATTER, BattingStyle.RIGHT_HAND, True, False, 63),
             ('Rishabh', 'Pant', PlayerRole.BATTER_WK, BattingStyle.LEFT_HAND, True, False, 17),
-            ('Hardik', 'Pandya', PlayerRole.BATTING_AR, BattingStyle.RIGHT_HAND, False, True, 33),
+            ('Hardik', 'Pandya', PlayerRole.BATTING_ALL_ROUNDER, BattingStyle.RIGHT_HAND, False, True, 33),
             ('Bhuvneshwar', 'Kumar', PlayerRole.BOWLER, BattingStyle.RIGHT_HAND, False, True, 15),
             ('KL', 'Rahul', PlayerRole.BATTER_WK, BattingStyle.RIGHT_HAND, True, False, 1),
         ]
