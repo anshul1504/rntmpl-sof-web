@@ -65,13 +65,22 @@ class HomePageView(TemplateView):
         context = super().get_context_data(**kwargs)
         context['site'] = WebsiteSettings.objects.first() or WebsiteSettings()
         context['page'] = HomePage.objects.filter(is_published=True).first() or HomePage()
-        context['hero_slides'] = HeroSlide.objects.filter(is_active=True)
+        context['hero_slides'] = HeroSlide.objects.filter(
+            is_active=True,
+            image__isnull=False,
+        ).exclude(image='')
         context['features'] = WebsiteFeature.objects.filter(is_active=True).order_by('sort_order', 'id')[:5]
-        context['gallery_items'] = GalleryItem.objects.filter(is_active=True)[:5]
+        context['gallery_items'] = GalleryItem.objects.filter(
+            is_active=True,
+            image__isnull=False,
+        ).exclude(image='')[:5]
         context['testimonials'] = Testimonial.objects.filter(is_active=True)[:6]
         context['news_posts'] = NewsPost.objects.filter(is_published=True, content_type='BLOG')[:3]
         context['home_teams'] = Team.objects.filter(is_active=True, is_deleted=False, tenant__is_deleted=False, tenant__is_public=True).select_related('team_category', 'team_type').order_by('name')[:4]
-        context['partner_logos'] = PartnerLogo.objects.filter(is_active=True)[:8]
+        context['partner_logos'] = PartnerLogo.objects.filter(
+            is_active=True,
+            logo__isnull=False,
+        ).exclude(logo='')[:8]
         context['blog_settings'] = BlogSettings.objects.first() or BlogSettings()
         context['featured_tournaments'] = Tournament.objects.filter(
             is_deleted=False, tenant__is_deleted=False, tenant__is_public=True,
