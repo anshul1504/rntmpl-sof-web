@@ -92,5 +92,5 @@ REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {  # noqa
 }
 
 # Static files
-STATIC_ROOT = '/var/www/cricket/static'
-MEDIA_ROOT = '/var/www/cricket/media'
+STATIC_ROOT = '/app/staticfiles'
+MEDIA_ROOT = '/app/media'
