@@ -1,0 +1,84 @@
+{% extends "accounts/auth_base.html" %}
+{% load static %}
+
+{% block title %}Sign In - RNT MPL{% endblock %}
+
+{% block auth_content %}
+<div class="mb-4 text-center">
+    <h4 class="text-dark fw-medium mb-1">Welcome back</h4>
+    <p class="text-muted small">Sign in to manage your cricket ecosystem</p>
+</div>
+
+<form method="post" novalidate>
+    {% csrf_token %}
+
+    <!-- Email field -->
+    <div class="mb-3">
+        <label for="id_email" class="form-label">Email</label>
+        {{ form.email }}
+        {% if form.email.errors %}
+            <div class="text-danger small mt-1"><i class="bi bi-exclamation-circle-fill"></i> {{ form.email.errors|striptags }}</div>
+        {% endif %}
+    </div>
+
+    <!-- Password field with show/hide toggle -->
+    <div class="mb-3">
+        <label for="id_password" class="form-label">Password</label>
+        <div class="position-relative">
+            {{ form.password }}
+            <button type="button" id="togglePassword" tabindex="-1"
+                style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#999;padding:0;line-height:1;">
+                <i class="bi bi-eye" id="togglePasswordIcon" style="font-size:1.05rem;"></i>
+            </button>
+        </div>
+        {% if form.password.errors %}
+            <div class="text-danger small mt-1"><i class="bi bi-exclamation-circle-fill"></i> {{ form.password.errors|striptags }}</div>
+        {% endif %}
+    </div>
+
+    <!-- Non-field errors -->
+    {% if form.non_field_errors %}
+        <div class="text-danger small mb-3"><i class="bi bi-exclamation-triangle-fill"></i> {{ form.non_field_errors|striptags }}</div>
+    {% endif %}
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="remember_me" id="id_remember_me">
+            <label class="form-check-label small text-muted" for="id_remember_me">
+                Remember me
+            </label>
+        </div>
+        <a href="{% url 'accounts:password_reset' %}" class="small auth-link">Forgot password?</a>
+    </div>
+
+    <button type="submit" class="btn btn-primary-custom w-100 btn-lg mb-3">Sign In</button>
+</form>
+
+<div class="text-center mb-4"><span class="text-muted small">First time here?</span><a href="{% url 'publicsite:guest-welcome' %}" class="auth-link small ms-1">Continue as Guest</a></div>
+
+<div class="position-relative my-4">
+    <hr class="text-muted">
+    <span class="position-absolute top-50 start-50 translate-middle bg-white px-3 text-muted small">or</span>
+</div>
+
+<div class="text-center">
+    <a href="{% url 'accounts:send-otp' %}" class="btn btn-outline-custom w-100"><i class="bi bi-envelope-open-fill me-2"></i>Sign in with OTP</a>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.getElementById('togglePassword').addEventListener('click', function () {
+        const pwd = document.getElementById('id_password');
+        const icon = document.getElementById('togglePasswordIcon');
+        if (pwd.type === 'password') {
+            pwd.type = 'text';
+            icon.classList.replace('bi-eye', 'bi-eye-slash');
+        } else {
+            pwd.type = 'password';
+            icon.classList.replace('bi-eye-slash', 'bi-eye');
+        }
+    });
+</script>
+{% endblock %}
+

@@ -1,0 +1,87 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block title %}Add Sponsor - {{ tournament.name }} - RNT MPL{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0" style="max-width: 800px; margin: 0 auto;">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h3 mb-1 fw-bold text-gradient">Add Sponsor</h1>
+            <p class="text-secondary small mb-0">Link a sponsor to <strong>{{ tournament.name }}</strong></p>
+        </div>
+        <a href="{% url 'tournaments:tournament-detail' tournament.id %}" class="btn btn-outline-secondary py-2 small fw-semibold"><i class="bi bi-arrow-left me-1"></i>Back to Tournament</a>
+    </div>
+
+    <div class="card premium-card border-0 shadow-sm">
+        <div class="card-body p-4">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger border-0 mb-4" style="background-color: var(--card-bg); border-left: 4px solid var(--gold-primary) !important; color: var(--text-primary);">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <label class="form-label small fw-bold" for="{{ form.name.id_for_label }}">Sponsor Name</label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                        <div class="text-danger small mt-1">{{ form.name.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label class="form-label small fw-bold" for="{{ form.sponsorship_level.id_for_label }}">Sponsorship Level (e.g. Title, Gold, Associate)</label>
+                        {{ form.sponsorship_level }}
+                        {% if form.sponsorship_level.errors %}
+                        <div class="text-danger small mt-1">{{ form.sponsorship_level.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label class="form-label small fw-bold" for="{{ form.amount.id_for_label }}">Sponsorship Amount</label>
+                        {{ form.amount }}
+                        {% if form.amount.errors %}
+                        <div class="text-danger small mt-1">{{ form.amount.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label class="form-label small fw-bold" for="{{ form.website.id_for_label }}">Website URL</label>
+                        {{ form.website }}
+                        {% if form.website.errors %}
+                        <div class="text-danger small mt-1">{{ form.website.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label small fw-bold" for="{{ form.logo.id_for_label }}">Sponsor Logo</label>
+                        {{ form.logo }}
+                        {% if form.logo.errors %}
+                        <div class="text-danger small mt-1">{{ form.logo.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-12">
+                        <div class="form-check form-switch bg-light p-3 rounded">
+                            {{ form.is_active }}
+                            <label class="form-check-label small fw-bold ms-2" for="{{ form.is_active.id_for_label }}">Active Sponsor?</label>
+                        </div>
+                        {% if form.is_active.errors %}
+                        <div class="text-danger small mt-1">{{ form.is_active.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-12 d-flex justify-content-end gap-2 mt-4 border-top pt-3">
+                        <a href="{% url 'tournaments:tournament-detail' tournament.id %}" class="btn btn-outline-secondary py-2.5 small fw-semibold">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4 py-2.5 fw-bold">Add Sponsor</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

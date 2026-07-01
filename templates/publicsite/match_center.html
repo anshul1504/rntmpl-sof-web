@@ -1,0 +1,30 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% block content %}
+<section class="rnt-page-hero has-image rnt-match-hero" style="background-image:linear-gradient(rgba(0,0,0,.64),rgba(0,0,0,.78)),url('{% static "website/images/event-details.jpg" %}')"><p class="rnt-page-kicker">RNTMPL Match Centre</p><h1>Fixtures, Live Scores &amp; Results</h1></section>
+<main class="rnt-match-page">
+    <section class="rnt-match-summary">
+        <a href="{% url 'publicsite:live-scores' %}"><i class="feather-icon icon-radio"></i><span><strong>{{ live_count }}</strong>Live Matches</span></a>
+        <a href="?status=upcoming" class="{% if status_filter == 'upcoming' %}active{% endif %}"><i class="feather-icon icon-calendar"></i><span><strong>{{ upcoming_count }}</strong>Upcoming</span></a>
+        <a href="?status=completed" class="{% if status_filter == 'completed' %}active{% endif %}"><i class="feather-icon icon-check-circle"></i><span><strong>{{ completed_count }}</strong>Completed</span></a>
+    </section>
+    <form class="rnt-match-filters" method="get"><label><i class="feather-icon icon-search"></i><input type="search" name="search" value="{{ search_query }}" placeholder="Search tournament, team or venue"></label><select name="status"><option value="">All Matches</option><option value="live"{% if status_filter == 'live' %} selected{% endif %}>Live</option><option value="upcoming"{% if status_filter == 'upcoming' %} selected{% endif %}>Upcoming</option><option value="completed"{% if status_filter == 'completed' %} selected{% endif %}>Completed</option></select><button type="submit">Filter</button>{% if search_query or status_filter %}<a href="{% url 'publicsite:match-center' %}">Reset</a>{% endif %}</form>
+    <div class="rnt-match-section-heading"><div><p class="rnt-section-kicker">Match Schedule</p><h2>{% if status_filter == 'live' %}Live Now{% elif status_filter == 'upcoming' %}Upcoming Fixtures{% elif status_filter == 'completed' %}Recent Results{% else %}All Matches{% endif %}</h2></div><span>{{ paginator.count }} match{{ paginator.count|pluralize:"es" }}</span></div>
+    <section class="rnt-match-grid">
+        {% for match in matches %}
+        <a href="{% url 'publicsite:scorecard' match.pk %}" class="rnt-match-card">
+            <div class="rnt-match-card-top"><div><span>{{ match.tournament.name }}</span>{% if match.match_number %}<small>Match {{ match.match_number }}</small>{% endif %}</div>{% if match.live_state.is_live %}<b class="live"><i></i>Live</b>{% elif match.is_completed %}<b class="result">Result</b>{% else %}<b>Upcoming</b>{% endif %}</div>
+            <div class="rnt-match-card-teams">
+                <div><span class="rnt-match-team-logo">{% if match.home_team.team.logo %}<img loading="lazy" decoding="async" src="{{ match.home_team.team.logo.url }}" alt="{{ match.home_team.team.name }}">{% else %}{{ match.home_team.team.abbreviation|default:"TEAM" }}{% endif %}</span><strong>{{ match.home_team.team.name }}</strong><em>{{ match.home_team_score|default:"—" }}</em>{% if match.home_team_overs %}<small>{{ match.home_team_overs }} overs</small>{% endif %}</div>
+                <span class="rnt-match-vs">VS</span>
+                <div><span class="rnt-match-team-logo">{% if match.away_team.team.logo %}<img loading="lazy" decoding="async" src="{{ match.away_team.team.logo.url }}" alt="{{ match.away_team.team.name }}">{% else %}{{ match.away_team.team.abbreviation|default:"TEAM" }}{% endif %}</span><strong>{{ match.away_team.team.name }}</strong><em>{{ match.away_team_score|default:"—" }}</em>{% if match.away_team_overs %}<small>{{ match.away_team_overs }} overs</small>{% endif %}</div>
+            </div>
+            {% if match.is_completed and match.winner %}<p class="rnt-match-result">{{ match.winner.team.name }} won the match</p>{% elif match.live_state.is_live and match.live_state.runs_required %}<p class="rnt-match-result">{{ match.live_state.runs_required }} runs required{% if match.live_state.balls_remaining %} from {{ match.live_state.balls_remaining }} balls{% endif %}</p>{% endif %}
+            <div class="rnt-match-card-footer"><span><i class="feather-icon icon-calendar"></i>{{ match.match_date|date:"d M Y, h:i A"|default:"Schedule TBA" }}</span><span><i class="feather-icon icon-map-pin"></i>{{ match.venue|default:match.city|default:"Venue TBA" }}</span><i class="feather-icon icon-arrow-up-right"></i></div>
+        </a>
+        {% empty %}<div class="rnt-event-empty"><i class="feather-icon icon-calendar"></i><h3>No matches found</h3><p>Try changing the filters or check again when new fixtures are published.</p></div>{% endfor %}
+    </section>
+    {% if is_paginated %}<nav class="rnt-blog-pagination">{% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}&search={{ search_query }}&status={{ status_filter }}"><i class="feather-icon icon-chevron-left"></i></a>{% endif %}{% for number in paginator.page_range %}{% if number == page_obj.number %}<span class="current">{{ number }}</span>{% else %}<a href="?page={{ number }}&search={{ search_query }}&status={{ status_filter }}">{{ number }}</a>{% endif %}{% endfor %}{% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}&search={{ search_query }}&status={{ status_filter }}"><i class="feather-icon icon-chevron-right"></i></a>{% endif %}</nav>{% endif %}
+    {% if featured_tournaments %}<section class="rnt-match-tournaments"><div class="rnt-match-section-heading"><div><p class="rnt-section-kicker">Competitions</p><h2>Featured Tournaments</h2></div><a href="{% url 'publicsite:event-list' %}">All Events <i class="feather-icon icon-arrow-right"></i></a></div><div>{% for tournament in featured_tournaments %}<a href="{% url 'publicsite:tournament-detail' tournament.slug %}"><span>{{ tournament.get_status_display }}</span><h3>{{ tournament.name }}</h3><p>{{ tournament.city|default:tournament.venue|default:"India" }}{% if tournament.start_date %} · {{ tournament.start_date|date:"M Y" }}{% endif %}</p><i class="feather-icon icon-arrow-up-right"></i></a>{% endfor %}</div></section>{% endif %}
+</main>
+{% endblock %}

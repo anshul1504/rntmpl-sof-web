@@ -1,0 +1,154 @@
+{% extends "accounts/base.html" %}
+{% load static %}
+{% block title %}{% if object %}Edit Player Profile{% else %}Onboard Player{% endif %} - RNT MPL{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{% if object %}{% url 'players:player-detail' object.pk %}{% else %}{% url 'players:player-list' %}{% endif %}" class="btn btn-sm btn-outline-secondary mb-3">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+    <h2 class="fw-bold">{% if object %}Edit Profile: {{ object.full_name }}{% else %}Onboard New Player{% endif %}</h2>
+    <p class="text-secondary small">Fill out the form below to register or update the player profile in your organization.</p>
+</div>
+
+<div class="card border border-light-subtle shadow-sm mb-4">
+    <div class="card-body p-4">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <h5 class="fw-bold mb-3 border-bottom pb-2 text-primary"><i class="bi bi-person me-2"></i>Personal Details</h5>
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label class="form-label">First Name *</label>
+                    {{ form.first_name }}
+                    {{ form.first_name.errors }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Last Name</label>
+                    {{ form.last_name }}
+                    {{ form.last_name.errors }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Date of Birth</label>
+                    {{ form.date_of_birth }}
+                    {{ form.date_of_birth.errors }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Gender</label>
+                    {{ form.gender }}
+                    {{ form.gender.errors }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Nationality</label>
+                    {{ form.nationality }}
+                    {{ form.nationality.errors }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Photo</label>
+                    {{ form.photo }}
+                    {{ form.photo.errors }}
+                </div>
+            </div>
+
+            <h5 class="fw-bold mb-3 border-bottom pb-2 text-primary"><i class="bi bi-dribbble me-2"></i>Cricket Specifics</h5>
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <label class="form-label">Playing Role *</label>
+                    {{ form.role }}
+                    {{ form.role.errors }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Batting Style</label>
+                    {{ form.batting_style }}
+                    {{ form.batting_style.errors }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Bowling Style</label>
+                    {{ form.bowling_style }}
+                    {{ form.bowling_style.errors }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Jersey Number</label>
+                    {{ form.jersey_number }}
+                    {{ form.jersey_number.errors }}
+                </div>
+                <div class="col-md-4 d-flex align-items-center gap-4 mt-md-4">
+                    <div class="form-check">
+                        {{ form.is_bowler }}
+                        <label class="form-check-label" for="id_is_bowler">Is Bowler?</label>
+                    </div>
+                    <div class="form-check">
+                        {{ form.is_wicket_keeper }}
+                        <label class="form-check-label" for="id_is_wicket_keeper">Is Wicket Keeper?</label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Player Status</label>
+                    {{ form.player_status }}
+                    {{ form.player_status.errors }}
+                </div>
+            </div>
+
+            <h5 class="fw-bold mb-3 border-bottom pb-2 text-primary"><i class="bi bi-geo-alt me-2"></i>Address & Contact Info</h5>
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label class="form-label">Email</label>
+                    {{ form.email }}
+                    {{ form.email.errors }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Phone</label>
+                    {{ form.phone }}
+                    {{ form.phone.errors }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Address Line 1</label>
+                    {{ form.address_line1 }}
+                    {{ form.address_line1.errors }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Address Line 2</label>
+                    {{ form.address_line2 }}
+                    {{ form.address_line2.errors }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">City</label>
+                    {{ form.city }}
+                    {{ form.city.errors }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">State</label>
+                    {{ form.state }}
+                    {{ form.state.errors }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">PIN Code</label>
+                    {{ form.pincode }}
+                    {{ form.pincode.errors }}
+                </div>
+            </div>
+
+            <h5 class="fw-bold mb-3 border-bottom pb-2 text-primary"><i class="bi bi-journal-text me-2"></i>Biographical Notes</h5>
+            <div class="row g-3 mb-4">
+                <div class="col-12">
+                    <label class="form-label">Biography</label>
+                    {{ form.biography }}
+                    {{ form.biography.errors }}
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Notes</label>
+                    {{ form.notes }}
+                    {{ form.notes.errors }}
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                <a href="{% url 'players:player-list' %}" class="btn btn-outline-secondary px-4">Cancel</a>
+                <button type="submit" class="btn btn-primary px-5" style="background: var(--primary-gradient) !important; color: #0c0c0c !important; border: none !important; font-weight: 500;">
+                    Save Profile
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

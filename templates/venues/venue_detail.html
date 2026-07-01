@@ -1,0 +1,6 @@
+{% extends "accounts/base.html" %}
+{% block title %}{{ venue.name }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4"><div><h2 class="fw-bold">{{ venue.name }}</h2><p class="text-secondary">{{ venue.city }}, {{ venue.state }} · Capacity {{ venue.capacity }}</p></div><a href="{% url 'venues:ground-create' venue.pk %}" class="btn btn-primary">Add Ground</a></div>
+<div class="row g-3">{% for ground in venue.grounds.all %}<div class="col-lg-6"><div class="card shadow-sm"><div class="card-body"><div class="d-flex justify-content-between"><h5>{{ ground.name }}</h5><a href="{% url 'venues:pitch-create' ground.pk %}" class="btn btn-sm btn-outline-primary">Add Pitch</a></div><p class="small text-secondary">{{ ground.get_surface_type_display }}{% if ground.boundary_size_meters %} · {{ ground.boundary_size_meters }}m boundary{% endif %}</p><ul>{% for pitch in ground.pitches.all %}<li>Pitch {{ pitch.code }} — {{ pitch.get_pitch_type_display }}</li>{% empty %}<li class="text-secondary">No pitches configured.</li>{% endfor %}</ul></div></div></div>{% empty %}<div class="col-12 text-secondary">No grounds configured.</div>{% endfor %}</div>
+{% endblock %}

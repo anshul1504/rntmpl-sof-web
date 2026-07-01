@@ -1,0 +1,50 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% block content %}
+<section class="rnt-job-detail-hero">
+    <div>
+        <a href="{% url 'publicsite:careers' %}"><i class="feather-icon icon-arrow-left"></i> All Careers</a>
+        <span>{{ job.department }}</span>
+        <h1>{{ job.title }}</h1>
+        <div class="rnt-job-detail-meta">
+            <span><i class="feather-icon icon-map-pin"></i>{{ job.location }}</span>
+            <span><i class="feather-icon icon-briefcase"></i>{{ job.get_employment_type_display }}</span>
+            {% if job.application_deadline %}<span><i class="feather-icon icon-calendar"></i>Apply by {{ job.application_deadline|date:"d M Y" }}</span>{% endif %}
+        </div>
+    </div>
+</section>
+
+<main class="rnt-job-detail-page">
+    <section class="rnt-job-detail-content">
+        <article>
+            <p class="rnt-section-kicker">Role Overview</p>
+            <h2>About The Opportunity</h2>
+            <p class="rnt-job-summary">{{ job.summary }}</p>
+            <h3>What We’re Looking For</h3>
+            <ul>{% for requirement in job.requirements.splitlines %}{% if requirement %}<li><i class="feather-icon icon-check-circle"></i>{{ requirement }}</li>{% endif %}{% endfor %}</ul>
+        </article>
+        <aside>
+            <h3>Share This Job</h3>
+            <div class="rnt-job-share">
+                <a target="_blank" rel="noopener" href="https://wa.me/?text={{ job.title|urlencode }}%20-%20{{ request.build_absolute_uri|urlencode }}"><i class="feather-icon icon-message-circle"></i>WhatsApp</a>
+                <a target="_blank" rel="noopener" href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.build_absolute_uri|urlencode }}"><i class="feather-icon icon-linkedin"></i>LinkedIn</a>
+                <a href="mailto:?subject={{ job.title|urlencode }}&body={{ request.build_absolute_uri|urlencode }}"><i class="feather-icon icon-mail"></i>Email</a>
+                <button type="button" class="rnt-copy-job-link" data-url="{{ request.build_absolute_uri }}"><i class="feather-icon icon-link"></i>Copy Link</button>
+            </div>
+            <a href="#apply-now" class="btn btn-gr">Apply For This Role</a>
+        </aside>
+    </section>
+
+    <section id="apply-now" class="rnt-career-form-section">
+        <div class="rnt-partner-form-copy"><p class="rnt-section-kicker">Application</p><h2>{{ career_page.form_title }}</h2><p>You are applying for <strong>{{ job.title }}</strong>. Submit your details and resume below.</p></div>
+        <form method="post" enctype="multipart/form-data" class="rnt-partner-form" novalidate>
+            {% csrf_token %}
+            {% if form.non_field_errors %}<div class="rnt-form-error-summary">{{ form.non_field_errors }}</div>{% endif %}
+            <div class="rnt-form-grid">{% for field in form %}{% if field.name != 'job' %}<div class="rnt-form-field{% if field.name == 'cover_note' %} is-full{% endif %}"><label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>{{ field }}{% for error in field.errors %}<small class="rnt-field-error">{{ error }}</small>{% endfor %}</div>{% endif %}{% endfor %}</div>
+            <button type="submit" class="btn btn-gr rnt-contact-submit">Submit Application <i class="feather-icon icon-send"></i></button>
+        </form>
+    </section>
+
+    {% if related_jobs %}<section class="rnt-related-jobs"><div class="rnt-partner-section-heading"><p class="rnt-section-kicker">More Opportunities</p><h2>Other Open Roles</h2></div><div class="rnt-job-list">{% for item in related_jobs %}<article><div><span>{{ item.department }}</span><h3>{{ item.title }}</h3><div class="rnt-job-meta"><span>{{ item.location }}</span><span>{{ item.get_employment_type_display }}</span></div></div><a href="{% url 'publicsite:job-detail' item.pk %}">View Role</a></article>{% endfor %}</div></section>{% endif %}
+</main>
+{% endblock %}

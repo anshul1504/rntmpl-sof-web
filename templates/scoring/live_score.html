@@ -1,0 +1,334 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block title %}Live Scoring Console - RNT MPL{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <!-- Header Title -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h3 mb-1 fw-bold text-gradient">Scoring Console</h1>
+            <p class="text-secondary small mb-0">{{ match.home_team.team.name }} vs {{ match.away_team.team.name }} &bull; {{ match.tournament.name }}</p>
+        </div>
+        <div>
+            <a href="{% url 'scoring:match-list' %}" class="btn btn-outline-secondary py-2 small fw-semibold"><i class="bi bi-arrow-left me-1"></i>Back to Matches</a>
+            <a href="{% url 'scoring:scorecard' match.id %}" class="btn btn-outline-primary py-2 small fw-semibold ms-2" target="_blank"><i class="bi bi-journal-text me-1"></i>View Live Scorecard</a>
+        </div>
+    </div>
+
+    <!-- Live Board Overview -->
+    <div class="row g-4 mb-4">
+        <!-- Main Score Board -->
+        <div class="col-12 col-lg-8">
+            <div class="card premium-card border-0 shadow-sm bg-dark text-white p-4 h-100" style="background: linear-gradient(135deg, #111827 0%, #1f2937 100%) !important;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="badge bg-danger px-3 py-1.5 fw-bold animate-pulse"><i class="bi bi-broadcast me-1"></i>LIVE SCORING</span>
+                    <span class="text-secondary small">Innings {{ current_innings.innings_number }}</span>
+                </div>
+                <div class="row align-items-center">
+                    <div class="col-12 col-md-6">
+                        <span class="text-secondary small text-uppercase fw-semibold tracking-wider">Batting Team: {{ current_innings.batting_team.team.name }}</span>
+                        <h1 class="display-3 fw-black text-white mt-1 mb-0">{{ state.runs }}/{{ state.wickets }}</h1>
+                        <p class="text-secondary mt-1 mb-0">Overs: <strong class="text-white">{{ state.overs_bowled }}</strong> &bull; Run Rate: <strong class="text-white">{{ state.run_rate }}</strong></p>
+                    </div>
+                    {% if state.target_runs %}
+                    <div class="col-12 col-md-6 text-md-end mt-3 mt-md-0">
+                        <div class="bg-secondary-subtle p-3 rounded text-dark bg-light d-inline-block text-start" style="min-width: 200px;">
+                            <span class="small text-secondary">Target:</span> <strong class="text-primary">{{ state.target_runs }}</strong>
+                            <br>
+                            <span class="small text-secondary">Required:</span> <strong class="text-danger">{{ state.runs_required }}</strong> runs off <strong class="text-danger">{{ state.balls_remaining }}</strong> balls
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Recent Deliveries Ticker -->
+                <div class="mt-4 pt-3 border-top border-secondary">
+                    <span class="small text-secondary d-block mb-2 text-uppercase fw-bold tracking-wider">This Over:</span>
+                    <div class="d-flex gap-2">
+                        {% for ball in recent_balls|slice:":6" %}
+                        <span class="badge bg-light text-dark rounded-circle p-2.5 d-inline-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 38px; height: 38px;">
+                            {{ ball.display_score|default:ball }}
+                        </span>
+                        {% empty %}
+                        <span class="text-secondary small">Start of the over.</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Match Lineup Status -->
+        <div class="col-12 col-lg-4">
+            <div class="card premium-card border-0 shadow-sm h-100">
+                <div class="card-header bg-transparent border-0 pt-3 pb-0 px-3">
+                    <h6 class="fw-bold mb-0 text-uppercase tracking-wider text-secondary">At The Crease</h6>
+                </div>
+                <div class="card-body p-3 small">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item bg-transparent px-0 py-2.5 d-flex align-items-center justify-content-between">
+                            <div>
+                                <i class="bi bi-arrow-right-short text-warning me-1"></i><strong>Striker:</strong>
+                                <span class="ms-1 text-primary fw-bold">{{ state.striker.full_name|default:"Not selected" }}</span>
+                            </div>
+                        </li>
+                        <li class="list-group-item bg-transparent px-0 py-2.5 d-flex align-items-center justify-content-between">
+                            <div>
+                                <i class="bi bi-dash-short text-secondary me-1"></i><strong>Non-Striker:</strong>
+                                <span class="ms-1 text-primary">{{ state.non_striker.full_name|default:"Not selected" }}</span>
+                            </div>
+                        </li>
+                        <li class="list-group-item bg-transparent px-0 py-2.5 d-flex align-items-center justify-content-between">
+                            <div>
+                                <i class="bi bi-shield-shaded text-info me-1"></i><strong>Bowler:</strong>
+                                <span class="ms-1 text-info fw-semibold">{{ state.current_bowler.full_name|default:"Not selected" }}</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Setup / Scoring Panels -->
+    {% if not state.striker or not state.non_striker or not state.current_bowler %}
+    <!-- Player Selection Console -->
+    <div class="card premium-card border-0 shadow-sm mb-4">
+        <div class="card-header bg-transparent border-0 pt-3 pb-0 px-3">
+            <h5 class="fw-bold mb-0">Scoring Setup: Match Lineup Selection</h5>
+        </div>
+        <div class="card-body p-3">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="setup_players">
+                <div class="row g-3">
+                    <!-- Striker Selection -->
+                    <div class="col-12 col-md-4">
+                        <label class="form-label small fw-bold">Select Striker (Batting Team)</label>
+                        <select name="striker" class="form-select" required>
+                            <option value="">Choose Striker...</option>
+                            {% for player in batting_players %}
+                            <option value="{{ player.id }}" {% if player == state.striker %}selected{% endif %}>{{ player.full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Non-Striker Selection -->
+                    <div class="col-12 col-md-4">
+                        <label class="form-label small fw-bold">Select Non-Striker (Batting Team)</label>
+                        <select name="non_striker" class="form-select" required>
+                            <option value="">Choose Non-Striker...</option>
+                            {% for player in batting_players %}
+                            <option value="{{ player.id }}" {% if player == state.non_striker %}selected{% endif %}>{{ player.full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Bowler Selection -->
+                    <div class="col-12 col-md-4">
+                        <label class="form-label small fw-bold">Select Bowler (Bowling Team)</label>
+                        <select name="bowler" class="form-select" required>
+                            <option value="">Choose Bowler...</option>
+                            {% for player in bowling_players %}
+                            <option value="{{ player.id }}" {% if player == state.current_bowler %}selected{% endif %}>{{ player.full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="col-12 d-flex justify-content-end mt-3">
+                        <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold">Confirm Lineup</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% else %}
+    <!-- Ball Input Recording Console -->
+    <div class="card premium-card border-0 shadow-sm mb-4">
+        <div class="card-header bg-transparent border-0 pt-3 pb-0 px-3">
+            <h5 class="fw-bold mb-0">Record Ball Events</h5>
+        </div>
+        <div class="card-body p-3">
+            <form method="post" id="ballRecordForm">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="record_ball">
+                <input type="hidden" name="is_wicket" id="isWicketField" value="false">
+
+                <div class="row g-3">
+                    <!-- Runs Selection -->
+                    <div class="col-12 col-md-6">
+                        <label class="form-label small fw-bold">Runs scored from bat</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for runs in "012346" %}
+                            <input type="radio" class="btn-check" name="runs_from_bat" id="runs_{{ runs }}" value="{{ runs }}" {% if runs == "0" %}checked{% endif %}>
+                            <label class="btn btn-outline-secondary px-3 py-2 fw-bold" style="min-width: 50px;" for="runs_{{ runs }}">{{ runs }}</label>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Delivery Classification -->
+                    <div class="col-12 col-md-6">
+                        <label class="form-label small fw-bold">Ball Type (Extras)</label>
+                        <select name="ball_type" id="ballTypeSelect" class="form-select py-2">
+                            {% for code, label in ball_types %}
+                            <option value="{{ code }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Wide/NoBall runs settings -->
+                    <div class="col-12 col-md-6 d-none" id="wideRunsContainer">
+                        <label class="form-label small fw-bold">Wide runs penalty (Total runs credited to extra)</label>
+                        <input type="number" name="extras_wide_runs" class="form-control" value="1" min="1">
+                    </div>
+
+                    <!-- NoBall runs settings -->
+                    <div class="col-12 col-md-6 d-none" id="noBallRunsContainer">
+                        <label class="form-label small fw-bold">No ball runs penalty (excluding runs from bat)</label>
+                        <input type="number" name="extras_no_ball_runs" class="form-control" value="1" min="1">
+                    </div>
+
+                    <div class="col-12 col-md-6 d-none" id="byeRunsContainer">
+                        <label class="form-label small fw-bold">Bye runs</label>
+                        <input type="number" name="extras_bye_runs" class="form-control" value="1" min="1">
+                    </div>
+
+                    <div class="col-12 col-md-6 d-none" id="legByeRunsContainer">
+                        <label class="form-label small fw-bold">Leg-bye runs</label>
+                        <input type="number" name="extras_leg_bye_runs" class="form-control" value="1" min="1">
+                    </div>
+
+                    <!-- Wicket reporting toggle -->
+                    <div class="col-12">
+                        <div class="form-check form-switch bg-light p-3 rounded">
+                            <input class="form-check-input ms-0 me-2" type="checkbox" role="switch" id="wicketSwitch">
+                            <label class="form-check-label fw-bold text-danger" for="wicketSwitch">Wicket Fall on this delivery?</label>
+                        </div>
+                    </div>
+
+                    <!-- Wicket Details Subform -->
+                    <div class="row g-3 d-none mt-2" id="wicketDetailsSection">
+                        <div class="col-12 col-md-4">
+                            <label class="form-label small fw-bold text-danger">Dismissal Type</label>
+                            <select name="dismissal_type" class="form-select">
+                                <option value="">Choose dismissal type...</option>
+                                {% for code, label in dismissal_types %}
+                                <option value="{{ code }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label small fw-bold text-danger">Dismissed Batter</label>
+                            <select name="dismissed_player" class="form-select">
+                                <option value="">Choose player...</option>
+                                <option value="{{ state.striker.id }}">{{ state.striker.full_name }} (Striker)</option>
+                                <option value="{{ state.non_striker.id }}">{{ state.non_striker.full_name }} (Non-Striker)</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label small fw-bold text-danger">Fielder involved (Run out / Catch)</label>
+                            <select name="fielder_on_dismissal" class="form-select">
+                                <option value="">Choose fielder...</option>
+                                {% for player in bowling_players %}
+                                <option value="{{ player.id }}">{{ player.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Control actions -->
+                    <div class="col-12 d-flex flex-wrap justify-content-between gap-3 mt-4 border-top pt-3">
+                        <div>
+                            <button type="submit" name="action" value="change_strike" class="btn btn-outline-warning py-2.5 small fw-semibold"><i class="bi bi-arrow-left-right me-1"></i>Rotate Strike</button>
+                            <button type="submit" name="action" value="complete_innings" class="btn btn-outline-danger py-2.5 small fw-semibold ms-2" onclick="return confirm('Complete current innings?');"><i class="bi bi-stop-circle me-1"></i>End Innings</button>
+                        </div>
+                        <button type="submit" class="btn btn-success px-4 py-2.5 fw-bold"><i class="bi bi-plus-circle me-1"></i>Record Delivery</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <h6 class="fw-bold text-danger">Scoring Correction</h6>
+            <form method="post" class="row g-2 align-items-end">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="undo_last_ball">
+                <div class="col-md-9">
+                    <label class="form-label small fw-semibold">Reason for undoing the last delivery</label>
+                    <input type="text" name="reason" class="form-control" maxlength="255" required placeholder="Example: wide entered as legal delivery">
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-outline-danger w-100" onclick="return confirm('Undo the last delivery and recalculate the scorecard?');">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>Undo Last Ball
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Toggle fields based on ball types selected
+    const ballTypeSelect = document.getElementById('ballTypeSelect');
+    const wideRunsContainer = document.getElementById('wideRunsContainer');
+    const noBallRunsContainer = document.getElementById('noBallRunsContainer');
+    const byeRunsContainer = document.getElementById('byeRunsContainer');
+    const legByeRunsContainer = document.getElementById('legByeRunsContainer');
+
+    if (ballTypeSelect) {
+        ballTypeSelect.addEventListener('change', function() {
+            wideRunsContainer.classList.add('d-none');
+            noBallRunsContainer.classList.add('d-none');
+            byeRunsContainer.classList.add('d-none');
+            legByeRunsContainer.classList.add('d-none');
+            
+            if (this.value === 'WIDE') {
+                wideRunsContainer.classList.remove('d-none');
+            } else if (this.value === 'NO_BALL') {
+                noBallRunsContainer.classList.remove('d-none');
+            } else if (this.value === 'BYE') {
+                byeRunsContainer.classList.remove('d-none');
+            } else if (this.value === 'LEG_BYE') {
+                legByeRunsContainer.classList.remove('d-none');
+            }
+        });
+    }
+
+    // Toggle wicket details sub-form fields
+    const wicketSwitch = document.getElementById('wicketSwitch');
+    const wicketDetailsSection = document.getElementById('wicketDetailsSection');
+    const isWicketField = document.getElementById('isWicketField');
+
+    if (wicketSwitch) {
+        wicketSwitch.addEventListener('change', function() {
+            if (this.checked) {
+                wicketDetailsSection.classList.remove('d-none');
+                isWicketField.value = "true";
+            } else {
+                wicketDetailsSection.classList.add('d-none');
+                isWicketField.value = "false";
+            }
+        });
+    }
+</script>
+<style>
+    .btn-check:checked + .btn-outline-secondary {
+        background-color: var(--gold-primary) !important;
+        border-color: var(--gold-primary) !important;
+        color: #fff !important;
+    }
+    .animate-pulse {
+        animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.4; }
+        100% { opacity: 1; }
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% block content %}
+<section class="rnt-page-hero has-image" style="background-image:linear-gradient(rgba(0,0,0,.66),rgba(0,0,0,.66)),url('{% if event_page.banner_image %}{{ event_page.banner_image.url }}{% else %}{% static "website/images/event-details.jpg" %}{% endif %}')">
+    <p class="rnt-page-kicker">{{ event_page.eyebrow }}</p>
+    <h1>{{ event_page.title }}</h1>
+</section>
+<main class="rnt-event-page">
+    <div class="rnt-event-toolbar">
+        <form method="get" class="rnt-event-filters">
+            <label><i class="feather-icon icon-search"></i><input type="search" name="search" value="{{ search_query }}" placeholder="{{ event_page.search_placeholder }}"></label>
+            <select name="status" aria-label="Filter by status"><option value="">{{ event_page.all_statuses_text }}</option>{% for value, label in status_choices %}<option value="{{ value }}"{% if status_filter == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+            <button type="submit">{{ event_page.filter_button_text }}</button>
+            {% if search_query or status_filter %}<a href="{% url 'publicsite:event-list' %}">{{ event_page.reset_button_text }}</a>{% endif %}
+        </form>
+    </div>
+    <div class="rnt-event-grid">
+        {% for event in events %}
+        <article class="rnt-event-card rnt-clickable-card{% if event.is_featured %} is-featured{% endif %}" tabindex="0" role="link" data-href="{% url 'publicsite:tournament-detail' event.slug %}">
+            <div class="rnt-event-card-image">
+                {% if event.banner_image %}<img loading="lazy" decoding="async" src="{{ event.banner_image.url }}" alt="{{ event.name }}">{% else %}<img loading="lazy" decoding="async" src="{% static 'website/images/event-details.jpg' %}" alt="{{ event.name }}">{% endif %}
+                <span class="rnt-event-status">{{ event.get_status_display }}</span>
+                {% if event.is_featured %}<span class="rnt-event-featured">{{ event_page.featured_badge_text }}</span>{% endif %}
+                {% if event.start_date %}<div class="rnt-event-date"><strong>{{ event.start_date|date:"d" }}</strong><span>{{ event.start_date|date:"M Y" }}</span></div>{% endif %}
+            </div>
+            <div class="rnt-event-card-body">
+                <div class="rnt-event-meta"><span><i class="feather-icon icon-map-pin"></i>{{ event.city|default:event.venue|default:"Venue TBA" }}</span><span><i class="feather-icon icon-award"></i>{{ event.format.name }}</span></div>
+                <h3>{{ event.name }}</h3>
+                <p>{{ event.description|default:"Fixtures, teams and official tournament updates."|truncatechars:90 }}</p>
+                {% if event.prize_money %}<div class="rnt-event-prize"><i class="feather-icon icon-trophy"></i><span>{{ event_page.prize_label }}</span><strong>₹{{ event.prize_money|floatformat:0 }}</strong></div>{% endif %}
+                <div class="rnt-event-numbers"><span><strong>{{ event.total_teams }}</strong>{{ event_page.teams_label }}</span><span><strong>{{ event.total_matches }}</strong>{{ event_page.matches_label }}</span><span><strong>{{ event.total_players }}</strong>{{ event_page.players_label }}</span></div>
+                <a href="{% url 'publicsite:tournament-detail' event.slug %}" class="rnt-event-link">{{ event_page.view_event_text }} <i class="feather-icon icon-arrow-up-right"></i></a>
+            </div>
+        </article>
+        {% empty %}<div class="rnt-event-empty"><i class="feather-icon icon-calendar"></i><h3>{{ event_page.empty_title }}</h3><p>{{ event_page.empty_description }}</p></div>{% endfor %}
+    </div>
+    {% if is_paginated %}<nav class="rnt-blog-pagination" aria-label="Event pagination">{% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}&search={{ search_query }}&status={{ status_filter }}"><i class="feather-icon icon-chevron-left"></i></a>{% endif %}{% for number in paginator.page_range %}{% if number == page_obj.number %}<span class="current">{{ number }}</span>{% else %}<a href="?page={{ number }}&search={{ search_query }}&status={{ status_filter }}">{{ number }}</a>{% endif %}{% endfor %}{% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}&search={{ search_query }}&status={{ status_filter }}"><i class="feather-icon icon-chevron-right"></i></a>{% endif %}</nav>{% endif %}
+</main>
+{% endblock %}

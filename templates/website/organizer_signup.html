@@ -1,0 +1,88 @@
+{% extends "website/base.html" %}
+
+{% block title %}Organizer Signup - RNT MPL{% endblock %}
+
+{% block content %}
+<section class="rnt-section rnt-section-light">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-9">
+        <div class="rnt-section-heading text-center mb-4">
+          <span class="rnt-eyebrow">Organizer Platform</span>
+          <h1>Run Your Cricket Organization On RNT MPL</h1>
+          <p>Submit your league, academy, tournament, or franchise details. After platform approval, your tenant workspace will be provisioned automatically.</p>
+        </div>
+
+        <form method="post" class="rnt-form-panel">
+          {% csrf_token %}
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+          {% endif %}
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label" for="{{ form.plan.id_for_label }}">Plan</label>
+              {{ form.plan }}
+              {{ form.plan.errors }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="{{ form.tenant_type.id_for_label }}">Organization Type</label>
+              {{ form.tenant_type }}
+              {{ form.tenant_type.errors }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="{{ form.organization_name.id_for_label }}">Organization Name</label>
+              {{ form.organization_name }}
+              {{ form.organization_name.errors }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="{{ form.contact_person.id_for_label }}">Contact Person</label>
+              {{ form.contact_person }}
+              {{ form.contact_person.errors }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="{{ form.email.id_for_label }}">Email</label>
+              {{ form.email }}
+              {{ form.email.errors }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="{{ form.phone.id_for_label }}">Phone</label>
+              {{ form.phone }}
+              {{ form.phone.errors }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="{{ form.city.id_for_label }}">City</label>
+              {{ form.city }}
+              {{ form.city.errors }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="{{ form.state.id_for_label }}">State</label>
+              {{ form.state }}
+              {{ form.state.errors }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="{{ form.expected_teams.id_for_label }}">Expected Teams</label>
+              {{ form.expected_teams }}
+              {{ form.expected_teams.errors }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="{{ form.expected_players.id_for_label }}">Expected Players</label>
+              {{ form.expected_players }}
+              {{ form.expected_players.errors }}
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="{{ form.message.id_for_label }}">Requirements</label>
+              {{ form.message }}
+              {{ form.message.errors }}
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-end mt-4">
+            <button type="submit" class="btn btn-primary">Submit Organizer Application</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

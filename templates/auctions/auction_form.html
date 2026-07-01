@@ -1,0 +1,1 @@
+{% extends "accounts/base.html" %}{% block title %}Create Auction{% endblock %}{% block content %}<h2 class="fw-bold mb-4">Create Player Auction</h2><div class="card shadow-sm"><div class="card-body"><form method="post">{% csrf_token %}{{ form.as_p }}<button class="btn btn-primary">Create Auction</button></form></div></div>{% endblock %}

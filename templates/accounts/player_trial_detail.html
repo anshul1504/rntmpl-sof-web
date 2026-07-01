@@ -1,0 +1,15 @@
+{% extends "accounts/base.html" %}
+{% block title %}{{ trial.title }}{% endblock %}
+{% block content %}
+<div class="mb-4"><h2 class="fw-bold">{{ trial.title }}</h2><p class="text-secondary">{{ trial.starts_at|date:"d M Y, h:i A" }} · {{ trial.venue }}</p></div>
+<div class="card premium-card mb-4"><div class="card-body">
+<h5 class="fw-bold">Invite Eligible Player</h5>
+<form method="post" action="{% url 'accounts:player-trial-invite' trial.pk %}" class="d-flex gap-2">{% csrf_token %}
+<select class="form-select" name="application" required><option value="">Select payment-verified candidate</option>{% for application in eligible_applications %}<option value="{{ application.pk }}">{{ application.full_name }} — {{ application.role }}</option>{% endfor %}</select>
+<button class="btn btn-primary">Invite</button></form>
+</div></div>
+<div class="card premium-card"><div class="card-body p-0"><div class="table-responsive"><table class="table"><thead><tr><th>Candidate</th><th>Status</th><th>Schedule</th><th></th></tr></thead><tbody>
+{% for invitation in invitations %}<tr><td><strong>{{ invitation.application.full_name }}</strong><div class="small text-secondary">{{ invitation.application.email }}</div></td><td>{{ invitation.get_status_display }}</td><td>{{ invitation.scheduled_at|date:"d M Y, h:i A" }}</td><td><div class="d-flex gap-1">{% if invitation.status == 'INVITED' %}<form method="post" action="{% url 'accounts:player-trial-status' invitation.pk 'SCHEDULED' %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary">Schedule</button></form>{% elif invitation.status == 'SCHEDULED' %}<form method="post" action="{% url 'accounts:player-trial-status' invitation.pk 'ATTENDED' %}">{% csrf_token %}<button class="btn btn-sm btn-outline-success">Mark Attended</button></form>{% endif %}<a class="btn btn-sm btn-outline-primary" href="{% url 'accounts:player-trial-evaluate' invitation.pk %}">Evaluate</a></div></td></tr>
+{% empty %}<tr><td colspan="4" class="text-center p-4">No candidates invited.</td></tr>{% endfor %}
+</tbody></table></div></div></div>
+{% endblock %}

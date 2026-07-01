@@ -1,0 +1,140 @@
+{% extends "accounts/base.html" %}
+{% load static %}
+{% block title %}{% if object %}Edit Team{% else %}Register Team{% endif %} - RNT MPL{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{% if object %}{% url 'teams:team-detail' object.pk %}{% else %}{% url 'teams:team-list' %}{% endif %}" class="btn btn-sm btn-outline-secondary mb-3">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+    <h2 class="fw-bold">{% if object %}Edit Team: {{ object.name }}{% else %}Register New Team{% endif %}</h2>
+    <p class="text-secondary small">Fill out the form below to register or update the team details in your organization.</p>
+</div>
+
+<div class="card border border-light-subtle shadow-sm mb-4">
+    <div class="card-body p-4">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <h5 class="fw-bold mb-3 border-bottom pb-2 text-primary"><i class="bi bi-shield me-2"></i>Team Identity</h5>
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label class="form-label">Team Name *</label>
+                    {{ form.name }}
+                    {{ form.name.errors }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Code *</label>
+                    {{ form.code }}
+                    {{ form.code.errors }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Short Name</label>
+                    {{ form.short_name }}
+                    {{ form.short_name.errors }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Abbreviation</label>
+                    {{ form.abbreviation }}
+                    {{ form.abbreviation.errors }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Category</label>
+                    {{ form.team_category }}
+                    {{ form.team_category.errors }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Type</label>
+                    {{ form.team_type }}
+                    {{ form.team_type.errors }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Founded</label>
+                    {{ form.founded_date }}
+                    {{ form.founded_date.errors }}
+                </div>
+            </div>
+
+            <h5 class="fw-bold mb-3 border-bottom pb-2 text-primary"><i class="bi bi-palette me-2"></i>Branding</h5>
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <label class="form-label">Team Logo</label>
+                    {{ form.logo }}
+                    {{ form.logo.errors }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Primary Jersey Color</label>
+                    <div>{{ form.jersey_color_primary }}</div>
+                    {{ form.jersey_color_primary.errors }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Secondary Jersey Color</label>
+                    <div>{{ form.jersey_color_secondary }}</div>
+                    {{ form.jersey_color_secondary.errors }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Home Ground</label>
+                    {{ form.home_ground }}
+                    {{ form.home_ground.errors }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Website</label>
+                    {{ form.website }}
+                    {{ form.website.errors }}
+                </div>
+            </div>
+
+            <h5 class="fw-bold mb-3 border-bottom pb-2 text-primary"><i class="bi bi-geo-alt me-2"></i>Address & Contact Info</h5>
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label class="form-label">Email</label>
+                    {{ form.email }}
+                    {{ form.email.errors }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Phone</label>
+                    {{ form.phone }}
+                    {{ form.phone.errors }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Alternate Phone</label>
+                    {{ form.alternate_phone }}
+                    {{ form.alternate_phone.errors }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Address Line 1</label>
+                    {{ form.address_line1 }}
+                    {{ form.address_line1.errors }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Address Line 2</label>
+                    {{ form.address_line2 }}
+                    {{ form.address_line2.errors }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">City</label>
+                    {{ form.city }}
+                    {{ form.city.errors }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">State</label>
+                    {{ form.state }}
+                    {{ form.state.errors }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">PIN Code</label>
+                    {{ form.pincode }}
+                    {{ form.pincode.errors }}
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                <a href="{% url 'teams:team-list' %}" class="btn btn-outline-secondary px-4">Cancel</a>
+                <button type="submit" class="btn btn-primary px-5" style="background: var(--primary-gradient) !important; color: #0c0c0c !important; border: none !important; font-weight: 500;">
+                    Save Team
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

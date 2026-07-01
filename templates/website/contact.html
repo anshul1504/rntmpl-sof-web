@@ -1,0 +1,84 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% block content %}
+<section class="rnt-contact-hero" style="background-image:linear-gradient(rgba(0,0,0,.68),rgba(0,0,0,.68)),url('{% if contact_page.banner_image %}{{ contact_page.banner_image.url }}{% else %}{% static "website/images/cricket-video.jpg" %}{% endif %}')">
+    <div>
+        <p>{{ contact_page.eyebrow }}</p>
+        <h1>{{ contact_page.title }}</h1>
+        <span>{{ contact_page.description }}</span>
+    </div>
+</section>
+
+<section class="rnt-contact-page">
+    <div class="rnt-contact-departments">
+        <div><i class="feather-icon icon-user-plus"></i><span>Players</span><strong>Registration Support</strong></div>
+        <div><i class="feather-icon icon-award"></i><span>Cricketers</span><strong>Trials &amp; Selection</strong></div>
+        <div><i class="feather-icon icon-briefcase"></i><span>Brands</span><strong>Partnerships &amp; Sponsors</strong></div>
+        <div><i class="feather-icon icon-life-buoy"></i><span>Support</span><strong>Technical Assistance</strong></div>
+    </div>
+
+    <div class="rnt-contact-grid">
+        <div class="rnt-contact-info">
+            <p class="rnt-section-kicker">Connect With Us</p>
+            <h2>We’re Here For Your Cricket Journey</h2>
+            <p>Reach the RNTMPL team for player registration, trials, tournaments, sponsorships, partnerships and general support.</p>
+
+            <div class="rnt-contact-cards">
+                {% if site.contact_phone %}<a href="tel:{{ site.contact_phone }}"><i class="feather-icon icon-phone"></i><div><span>Call Us</span><strong>{{ site.contact_phone }}</strong></div></a>{% endif %}
+                {% if site.contact_email %}<a href="mailto:{{ site.contact_email }}"><i class="feather-icon icon-mail"></i><div><span>Email Us</span><strong>{{ site.contact_email }}</strong></div></a>{% endif %}
+                {% if site.address %}<div><i class="feather-icon icon-map-pin"></i><div><span>Our Location</span><strong>{{ site.address }}</strong></div></div>{% endif %}
+                <div><i class="feather-icon icon-clock"></i><div><span>Working Hours</span><strong>{{ contact_page.office_hours }}</strong></div></div>
+            </div>
+
+            <div class="rnt-contact-response"><i class="feather-icon icon-message-circle"></i>{{ contact_page.response_time }}</div>
+            <div class="rnt-contact-whatsapp">
+                <i class="feather-icon icon-message-circle"></i>
+                <div><h3>{{ contact_page.whatsapp_title }}</h3><p>{{ contact_page.whatsapp_description }}</p></div>
+                <a href="https://wa.me/{{ site.whatsapp_number }}?text={{ site.whatsapp_message|urlencode }}" target="_blank" rel="noopener">Chat Now</a>
+            </div>
+        </div>
+
+        <div class="rnt-contact-form-card">
+            <p class="rnt-section-kicker">Get In Touch</p>
+            <h2>{{ contact_page.form_title }}</h2>
+            <form method="post" novalidate>
+                {% csrf_token %}
+                {% if form.non_field_errors %}<div class="rnt-form-error-summary">{{ form.non_field_errors }}</div>{% endif %}
+                <div class="rnt-form-grid">
+                    {% for field in form %}
+                        <div class="rnt-form-field{% if field.name == 'subject' or field.name == 'message' %} is-full{% endif %}">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+                            {{ field }}
+                            {% for error in field.errors %}<small class="rnt-field-error">{{ error }}</small>{% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+                <button type="submit" class="btn btn-gr rnt-contact-submit">Send Message <i class="feather-icon icon-send"></i></button>
+            </form>
+        </div>
+    </div>
+
+    {% if contact_page.map_embed_url %}
+        <div class="rnt-contact-map"><iframe src="{{ contact_page.map_embed_url }}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="RNTMPL location"></iframe></div>
+    {% endif %}
+
+    {% if contact_faqs %}
+    <div class="rnt-contact-faq">
+        <div class="rnt-contact-faq-heading"><p class="rnt-section-kicker">Quick Answers</p><h2>Frequently Asked Questions</h2></div>
+        <div class="accordion" id="contactFaq">
+            {% for faq in contact_faqs %}
+            <div class="rnt-faq-item">
+                <h3><button type="button" data-bs-toggle="collapse" data-bs-target="#faq{{ faq.pk }}" aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}">{{ faq.question }}<i class="feather-icon icon-plus"></i></button></h3>
+                <div id="faq{{ faq.pk }}" class="accordion-collapse collapse{% if forloop.first %} show{% endif %}" data-bs-parent="#contactFaq"><div>{{ faq.answer }}</div></div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="rnt-contact-bottom-cta">
+        <div><span>RNTMPL Player Pathway</span><h2>{{ contact_page.cta_title }}</h2><p>{{ contact_page.cta_description }}</p></div>
+        <a href="{% url 'publicsite:player-registration' %}" class="btn btn-gr btn-lg">Register As Player</a>
+    </div>
+</section>
+{% endblock %}

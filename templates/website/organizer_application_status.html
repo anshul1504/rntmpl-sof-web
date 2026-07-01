@@ -1,0 +1,77 @@
+{% extends "website/base.html" %}
+
+{% block title %}Organizer Applications - RNT MPL{% endblock %}
+
+{% block content %}
+<section class="rnt-section rnt-section-light">
+  <div class="container">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+      <div>
+        <span class="rnt-eyebrow">Organizer Console</span>
+        <h1 class="mb-1">Your Organizer Applications</h1>
+        <p class="text-muted mb-0">Track review, payment, provisioning and subscription status.</p>
+      </div>
+      <a class="btn btn-primary" href="{% url 'publicsite:organizer-signup' %}">New Application</a>
+    </div>
+
+    {% if pending_payments %}
+      <div class="alert alert-warning">
+        <strong>Pending plan payment:</strong>
+        {% for payment in pending_payments %}
+          <span class="d-inline-block me-2">{{ payment.organizer_application.organization_name }} - {{ payment.amount }} {{ payment.currency }}</span>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="row g-3">
+      {% for application in applications %}
+        <div class="col-lg-6">
+          <div class="card h-100">
+            <div class="card-body">
+              <div class="d-flex justify-content-between gap-3">
+                <div>
+                  <h2 class="h5 mb-1">{{ application.organization_name }}</h2>
+                  <p class="text-muted mb-2">{{ application.plan.name }} plan</p>
+                </div>
+                <span class="badge bg-dark align-self-start">{{ application.get_status_display }}</span>
+              </div>
+              <dl class="row small mb-0">
+                <dt class="col-5">Submitted</dt>
+                <dd class="col-7">{{ application.created_at|date:"d M Y, h:i A" }}</dd>
+                <dt class="col-5">Contact</dt>
+                <dd class="col-7">{{ application.contact_person }}<br>{{ application.email }}</dd>
+                <dt class="col-5">Tenant</dt>
+                <dd class="col-7">
+                  {% if application.tenant %}
+                    {{ application.tenant.name }}
+                  {% else %}
+                    Not provisioned yet
+                  {% endif %}
+                </dd>
+                <dt class="col-5">Subscription</dt>
+                <dd class="col-7">
+                  {% if application.subscription %}
+                    {{ application.subscription.get_status_display }}
+                    {% if application.subscription.current_period_end %}
+                      until {{ application.subscription.current_period_end|date:"d M Y" }}
+                    {% endif %}
+                  {% else %}
+                    Pending provisioning
+                  {% endif %}
+                </dd>
+              </dl>
+              {% if application.review_note %}
+                <div class="alert alert-light border mt-3 mb-0">{{ application.review_note }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% empty %}
+        <div class="col-12">
+          <div class="alert alert-info">No organizer applications submitted yet.</div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

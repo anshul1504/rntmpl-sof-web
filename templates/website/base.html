@@ -1,0 +1,185 @@
+﻿{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="description" content="{% block meta_description %}{{ site.default_meta_description|default:page.hero_description|truncatechars:155 }}{% endblock %}">
+    <meta name="robots" content="index,follow">
+    <link rel="canonical" href="{{ request.build_absolute_uri }}">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="{{ site.site_name }}">
+    <meta property="og:title" content="{% block og_title %}{{ site.default_meta_title|default:site.site_name }}{% endblock %}">
+    <meta property="og:description" content="{{ site.default_meta_description|default:page.hero_description|truncatechars:200 }}">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    {% if site.default_share_image %}<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ site.default_share_image.url }}">{% endif %}
+    <meta name="twitter:card" content="summary_large_image">
+    <title>{% block title %}{{ site.default_meta_title|default:site.site_name }} | {{ site.tagline }}{% endblock %}</title>
+    {% if site.favicon %}
+    <link rel="icon" type="image/png" href="{{ site.favicon.url }}?v=20260619-logo">
+    <link rel="shortcut icon" href="{{ site.favicon.url }}?v=20260619-logo">
+    <link rel="apple-touch-icon" href="{{ site.favicon.url }}?v=20260619-logo">
+    {% else %}
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'website/images/favicon.png' %}?v=20260619-logo">
+    <link rel="icon" type="image/x-icon" href="{% static 'website/images/favicon.ico' %}?v=20260619-logo">
+    <link rel="shortcut icon" href="{% static 'website/images/favicon.ico' %}?v=20260619-logo">
+    <link rel="apple-touch-icon" href="{% static 'website/images/favicon.png' %}?v=20260619-logo">
+    {% endif %}
+    <link rel="stylesheet" href="{% static 'website/css/feather.css' %}">
+    <link rel="stylesheet" href="{% static 'website/css/nice-select2.css' %}">
+    <link rel="stylesheet" href="{% static 'website/css/jarallax.min.css' %}">
+    <link rel="stylesheet" href="{% static 'website/css/swiper-bundle.min.css' %}">
+    <link rel="stylesheet" href="{% static 'website/css/venobox.min.css' %}">
+    <link rel="stylesheet" href="{% static 'website/css/animate.css' %}">
+    <link rel="stylesheet" href="{% static 'website/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'website/css/rnt-theme.css' %}?v=20260621-payment-card-6">
+    {% block page_styles %}{% endblock %}
+</head>
+<body>
+<a class="rnt-skip-link" href="#main-content">Skip to main content</a>
+<div id="main-content">
+<div id="preloader"><div class="preloader"><span></span><span></span></div></div>
+<header class="rnt-header">
+    <div class="rnt-topbar d-flex align-items-center">
+        <div class="rnt-header-inner d-flex justify-content-between align-items-center gap-3">
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+                {% if site.contact_phone %}<a href="tel:{{ site.contact_phone }}"><i class="feather-icon icon-phone me-1"></i>{{ site.contact_phone }}</a>{% endif %}
+                {% if site.contact_phone and site.contact_email %}<span class="rnt-contact-divider"></span>{% endif %}
+                {% if site.contact_email %}<a href="mailto:{{ site.contact_email }}"><i class="feather-icon icon-mail me-1"></i>{{ site.contact_email }}</a>{% endif %}
+                <span class="rnt-contact-divider d-none d-md-inline-block"></span>
+                <div class="rnt-top-links d-none d-md-flex gap-3"><a href="{% url 'publicsite:live-scores' %}"><i class="feather-icon icon-radio me-1"></i>Live Score</a></div>
+            </div>
+            <div class="rnt-topbar-actions d-flex align-items-center gap-3">
+                <a class="rnt-login-link" href="{% url 'accounts:login' %}"><i class="feather-icon icon-user"></i>Login</a>
+                <span class="rnt-contact-divider"></span>
+                <div class="rnt-social d-flex align-items-center gap-3">
+                {% if site.facebook_url %}<a href="{{ site.facebook_url }}" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#1877F2" d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.414c0-3.025 1.792-4.697 4.533-4.697 1.313 0 2.686.236 2.686.236v2.974h-1.513c-1.49 0-1.956.931-1.956 1.887v2.259h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073Z"/></svg></a>{% endif %}
+                {% if site.instagram_url %}<a href="{{ site.instagram_url }}" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><defs><radialGradient id="igGradient" cx="30%" cy="107%" r="150%"><stop offset="0%" stop-color="#fdf497"/><stop offset="25%" stop-color="#fdf497"/><stop offset="45%" stop-color="#fd5949"/><stop offset="60%" stop-color="#d6249f"/><stop offset="90%" stop-color="#285AEB"/></radialGradient></defs><rect width="24" height="24" rx="6" fill="url(#igGradient)"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="#fff" stroke-width="1.8"/><circle cx="17.4" cy="6.7" r="1.1" fill="#fff"/><rect x="3.7" y="3.7" width="16.6" height="16.6" rx="5" fill="none" stroke="#fff" stroke-width="1.7"/></svg></a>{% endif %}
+                {% if site.youtube_url %}<a href="{{ site.youtube_url }}" target="_blank" rel="noopener" aria-label="YouTube"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#FF0000" d="M23.5 6.2a3 3 0 0 0-2.1-2.13C19.55 3.56 12 3.56 12 3.56s-7.55 0-9.4.51A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.13c1.85.51 9.4.51 9.4.51s7.55 0 9.4-.51a3 3 0 0 0 2.1-2.13A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8Z"/><path fill="#fff" d="m9.6 15.6 6.3-3.6-6.3-3.6v7.2Z"/></svg></a>{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <nav class="navbar navbar-expand-xl"><div class="rnt-header-inner d-flex align-items-center">
+        <a class="navbar-brand rnt-header-brand" href="{% url 'publicsite:home' %}"><img loading="lazy" decoding="async" class="site-logo" src="{% if site.logo %}{{ site.logo.url }}{% else %}{% static 'images/logo.png' %}{% endif %}" alt="{{ site.site_name }} Logo"><span><strong>{{ site.site_name }}</strong><small>{{ site.tagline }}</small></span></a>
+        <button class="navbar-toggler offcanvas-nav-btn rnt-menu-toggle" type="button" aria-label="Open navigation menu"><span></span><span></span><span></span></button>
+        <div class="nav-cta order-xl-3 d-flex align-items-center gap-3">
+            <a class="btn btn-rnt-gold" href="{% url 'publicsite:player-registration' %}"><i class="feather-icon icon-user-plus me-2"></i>Registration</a>
+        </div>
+        <div class="offcanvas bg-dark offcanvas-start offcanvas-nav"><div class="offcanvas-header"><a class="rnt-header-brand" href="{% url 'publicsite:home' %}"><img loading="lazy" decoding="async" class="site-logo" src="{% if site.logo %}{{ site.logo.url }}{% else %}{% static 'images/logo.png' %}{% endif %}" alt="{{ site.site_name }} Logo"><span><strong>{{ site.site_name }}</strong><small>{{ site.tagline }}</small></span></a><button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button></div><div class="offcanvas-body pt-0 align-items-center"><ul class="navbar-nav mx-auto align-items-xl-center"><li class="nav-item"><a href="{% url 'publicsite:home' %}" class="nav-link">Home</a></li><li class="nav-item"><a href="{% url 'publicsite:about' %}" class="nav-link">About Us</a></li><li class="nav-item"><a href="{% url 'publicsite:home' %}#teams" class="nav-link">Teams</a></li><li class="nav-item"><a href="{% url 'publicsite:match-center' %}" class="nav-link">Matches</a></li><li class="nav-item"><a href="{% url 'publicsite:home' %}#career" class="nav-link">Career</a></li><li class="nav-item dropdown"><a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Partners</a><ul class="dropdown-menu"><li><a class="dropdown-item" href="{% url 'publicsite:home' %}#partners">Partners</a></li><li><a class="dropdown-item" href="{% url 'publicsite:home' %}#sponsor">Sponsors</a></li></ul></li><li class="nav-item dropdown"><a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">More</a><ul class="dropdown-menu"><li><a class="dropdown-item" href="{% url 'publicsite:blog-list' %}">Blog</a></li><li><a class="dropdown-item" href="{% url 'publicsite:home' %}#events">Events</a></li><li><a class="dropdown-item" href="{% url 'publicsite:home' %}#news">News</a></li></ul></li><li class="nav-item"><a href="{% url 'publicsite:contact' %}" class="nav-link">Contact Us</a></li></ul></div></div>
+    </div></nav>
+</header>
+{% if messages %}<div class="rnt-messages">{% for message in messages %}<div class="rnt-message {{ message.tags }}">{{ message }}</div>{% endfor %}</div>{% endif %}
+{% block content %}{% endblock %}
+</div>
+{% include "website/footer.html" %}
+<a class="rnt-floating-whatsapp" href="https://wa.me/{{ site.whatsapp_number }}?text={{ site.whatsapp_message|urlencode }}" target="_blank" rel="noopener" aria-label="Chat with RNTMPL on WhatsApp">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M16.04 3C8.86 3 3.02 8.82 3.02 15.98c0 2.29.6 4.52 1.73 6.48L3 29l6.72-1.76a13 13 0 0 0 6.31 1.61h.01c7.18 0 13.02-5.82 13.02-12.98C29.06 8.82 23.22 3 16.04 3Zm0 23.66h-.01a10.78 10.78 0 0 1-5.5-1.5l-.39-.23-3.99 1.05 1.07-3.88-.25-.4a10.72 10.72 0 0 1-1.65-5.72c0-5.95 4.81-10.79 10.73-10.79 5.92 0 10.73 4.84 10.73 10.79 0 5.94-4.82 10.78-10.74 10.78Zm5.89-8.08c-.32-.16-1.91-.94-2.2-1.05-.3-.11-.51-.16-.73.16-.21.32-.83 1.05-1.02 1.27-.19.21-.38.24-.7.08-.32-.16-1.36-.5-2.59-1.6a9.7 9.7 0 0 1-1.79-2.22c-.19-.32-.02-.5.14-.66.15-.14.32-.37.49-.56.16-.19.21-.32.32-.53.11-.21.05-.4-.03-.56-.08-.16-.73-1.75-.99-2.4-.26-.63-.53-.55-.73-.56h-.62c-.22 0-.57.08-.86.4-.3.32-1.13 1.1-1.13 2.69 0 1.59 1.16 3.12 1.32 3.34.16.21 2.28 3.48 5.52 4.88.77.33 1.37.53 1.84.68.77.25 1.48.21 2.03.13.62-.09 1.91-.78 2.18-1.54.27-.75.27-1.4.19-1.54-.08-.13-.3-.21-.62-.37Z"/></svg>
+</a><div class="back-top"><i class="feather-icon icon-chevron-up"></i></div>
+<script src="{% static 'website/js/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'website/js/swiper-bundle.min.js' %}"></script>
+<script src="{% static 'website/js/jarallax.min.js' %}"></script>
+<script src="{% static 'website/js/nice-select2.js' %}"></script>
+<script src="{% static 'website/js/venobox.min.js' %}"></script>
+<script src="{% static 'website/js/isotope.pkgd.min.js' %}"></script>
+<script src="{% static 'website/js/purecounter_vanilla.js' %}"></script>
+<script src="{% static 'website/js/gsap.min.js' %}"></script>
+<script src="{% static 'website/js/SplitText.js' %}"></script>
+<script src="{% static 'website/js/ScrollTrigger.min.js' %}"></script>
+<script src="{% static 'website/js/wow.min.js' %}"></script>
+<script src="{% static 'website/js/custom.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const currentPath = window.location.pathname.replace(/\/$/, '') || '/';
+    document.querySelectorAll('.rnt-header .nav-link, .rnt-header .dropdown-item').forEach(link => {
+        const rawHref = link.getAttribute('href');
+        if (!rawHref || rawHref === '#' || rawHref.startsWith('http')) return;
+        const linkUrl = new URL(rawHref, window.location.origin);
+        const linkPath = linkUrl.pathname.replace(/\/$/, '') || '/';
+        const hasSectionHash = Boolean(linkUrl.hash);
+        const exactHome = linkPath === '/' && currentPath === '/' && !hasSectionHash;
+        const nestedPage = linkPath !== '/' && (currentPath === linkPath || currentPath.startsWith(linkPath + '/'));
+        if (exactHome || nestedPage) {
+            link.classList.add('is-active');
+            const dropdown = link.closest('.dropdown');
+            if (dropdown) dropdown.querySelector('.dropdown-toggle')?.classList.add('is-active');
+        }
+    });
+    document.querySelectorAll('.rnt-header a[href$="#teams"]').forEach(link => {
+        link.href = "{% url 'publicsite:team-list' %}";
+    });
+    document.querySelectorAll('.rnt-copy-job-link').forEach(button => {
+        button.addEventListener('click', async () => {
+            await navigator.clipboard.writeText(button.dataset.url);
+            const original = button.innerHTML;
+            button.textContent = 'Link Copied';
+            window.setTimeout(() => { button.innerHTML = original; }, 1800);
+        });
+    });
+    document.querySelectorAll('.rnt-header a[href$="#career"]').forEach(link => {
+        link.href = "{% url 'publicsite:careers' %}";
+    });
+    document.querySelectorAll('.rnt-header a[href$="#partners"]').forEach(link => {
+        link.href = "{% url 'publicsite:partners' %}";
+    });
+    document.querySelectorAll('.rnt-header a[href$="#sponsor"]').forEach(link => {
+        link.href = "{% url 'publicsite:sponsors' %}";
+    });
+    const moreDropdown = [...document.querySelectorAll('.rnt-header .dropdown')].find(item => item.querySelector('.dropdown-toggle')?.textContent.trim() === 'More');
+    if (moreDropdown && !moreDropdown.nextElementSibling?.querySelector?.('a[href*="gallery"]')) {
+        const galleryItem = document.createElement('li');
+        galleryItem.className = 'nav-item';
+        galleryItem.innerHTML = '<a href="{% url "publicsite:gallery" %}" class="nav-link">Gallery</a>';
+        moreDropdown.insertAdjacentElement('afterend', galleryItem);
+    }
+    document.querySelectorAll('.rnt-header a[href$="#events"]').forEach(link => {
+        link.href = "{% url 'publicsite:event-list' %}";
+    });
+    document.querySelectorAll('.rnt-header a[href$="#news"]').forEach(link => {
+        link.href = "{% url 'publicsite:news-list' %}";
+    });
+    document.querySelectorAll('.rnt-message').forEach(message => {
+        window.setTimeout(() => {
+            message.classList.add('is-hiding');
+            window.setTimeout(() => message.remove(), 350);
+        }, 3000);
+    });
+    document.querySelectorAll('.rnt-clickable-card[data-href]').forEach(card => {
+        const openCard = () => { window.location.href = card.dataset.href; };
+        card.addEventListener('click', event => {
+            if (!event.target.closest('a, button')) openCard();
+        });
+        card.addEventListener('keydown', event => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                openCard();
+            }
+        });
+    });
+    const links = [...document.querySelectorAll('.rnt-header .nav-link[href^="#"], .rnt-header .dropdown-item[href^="#"]')];
+    const sections = links.map(link => document.querySelector(link.getAttribute('href'))).filter(Boolean);
+    const homeLink = document.querySelector('.rnt-header .nav-link[href="{% url "publicsite:home" %}"]');
+    function setActive(id) {
+        document.querySelectorAll('.rnt-header .nav-link, .rnt-header .dropdown-item').forEach(link => link.classList.remove('active'));
+        const activeLink = links.find(link => link.getAttribute('href') === '#' + id);
+        if (activeLink) {
+            activeLink.classList.add('active');
+            const dropdown = activeLink.closest('.dropdown');
+            if (dropdown) dropdown.querySelector('.dropdown-toggle').classList.add('active');
+        } else if (homeLink) {
+            homeLink.classList.add('active');
+        }
+    }
+    const observer = new IntersectionObserver(entries => {
+        const visible = entries.filter(entry => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (visible) setActive(visible.target.id);
+    }, { rootMargin: '-25% 0px -60% 0px', threshold: [0.05, 0.25, 0.5] });
+    sections.forEach(section => observer.observe(section));
+    if (location.pathname === '/' && !location.hash && homeLink) homeLink.classList.add('active');
+});
+</script>
+</body>
+</html>
+
+
+

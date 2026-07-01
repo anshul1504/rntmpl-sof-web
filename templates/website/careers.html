@@ -1,0 +1,38 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% block content %}
+<section class="rnt-page-hero has-image" style="background-image:linear-gradient(rgba(0,0,0,.64),rgba(0,0,0,.64)),url('{% if career_page.banner_image %}{{ career_page.banner_image.url }}{% else %}{% static "website/images/cricket-video.jpg" %}{% endif %}')">
+    <p class="rnt-page-kicker">{{ career_page.eyebrow }}</p>
+    <h1>{{ career_page.title }}</h1>
+</section>
+
+<main class="rnt-career-page">
+    <section class="rnt-career-intro">
+        <div><p class="rnt-section-kicker">Work In Cricket</p><h2>{{ career_page.benefits_title }}</h2><p>{{ career_page.description }}</p></div>
+        <div class="rnt-career-benefits">
+            <div><i class="feather-icon icon-activity"></i><h3>Meaningful Work</h3><p>Build systems and experiences that support real cricket journeys.</p></div>
+            <div><i class="feather-icon icon-users"></i><h3>Collaborative Team</h3><p>Work across operations, technology, media and league functions.</p></div>
+            <div><i class="feather-icon icon-trending-up"></i><h3>Growth Opportunity</h3><p>Learn through live events, digital products and expanding responsibilities.</p></div>
+            <div><i class="feather-icon icon-award"></i><h3>Cricket Impact</h3><p>Help players and teams access better structured opportunities.</p></div>
+        </div>
+    </section>
+
+    <section class="rnt-career-openings">
+        <div class="rnt-partner-section-heading"><p class="rnt-section-kicker">Open Roles</p><h2>{{ career_page.openings_title }}</h2></div>
+        <div class="rnt-job-list">
+            {% for job in job_openings %}
+            <article>
+                <div><span>{{ job.department }}</span><h3>{{ job.title }}</h3><p>{{ job.summary|truncatechars:170 }}</p><div class="rnt-job-meta"><span><i class="feather-icon icon-map-pin"></i>{{ job.location }}</span><span><i class="feather-icon icon-briefcase"></i>{{ job.get_employment_type_display }}</span>{% if job.application_deadline %}<span><i class="feather-icon icon-calendar"></i>Apply by {{ job.application_deadline|date:"d M Y" }}</span>{% endif %}</div></div>
+                <a href="{% url 'publicsite:job-detail' job.pk %}">View Role <i class="feather-icon icon-arrow-right"></i></a>
+            </article>
+            {% empty %}<div class="rnt-event-empty"><h3>No current openings</h3><p>You can still submit a general application below.</p></div>{% endfor %}
+        </div>
+    </section>
+
+    <section class="rnt-career-process">
+        <div class="rnt-partner-section-heading"><p class="rnt-section-kicker">What To Expect</p><h2>{{ career_page.process_title }}</h2></div>
+        <div class="rnt-partner-process-grid"><div><strong>01</strong><h3>Application</h3><p>Submit your role preference, profile and resume.</p></div><div><strong>02</strong><h3>Profile Review</h3><p>Our team reviews experience and role alignment.</p></div><div><strong>03</strong><h3>Conversation</h3><p>Shortlisted candidates meet the relevant team.</p></div><div><strong>04</strong><h3>Decision</h3><p>Selected candidates receive next-step details.</p></div></div>
+    </section>
+
+</main>
+{% endblock %}

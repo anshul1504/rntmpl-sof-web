@@ -1,0 +1,13 @@
+Welcome to RNT MPL Cricket Platform!
+
+Hello {{ full_name }},
+
+We are thrilled to welcome you to the RNT MPL Cricket Platform! Your email address has been successfully verified, and your account is active.
+
+Log in to access your dashboard, manage teams, join tournaments, view live matches, and explore our enterprise cricket features.
+
+Best regards,
+The RNT MPL Team
+
+--------------------------------------------------
+Designed & Developed by The Webfix (https://www.thewebfix.in)
