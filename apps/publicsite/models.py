@@ -742,6 +742,23 @@ class PlayerRegistrationApplication(models.Model):
         PAYMENT_SUBMITTED = 'PAYMENT_SUBMITTED', 'Payment Submitted'
         COMPLETED = 'COMPLETED', 'Completed'
 
+    class PaymentStatus(models.TextChoices):
+        NOT_STARTED = 'NOT_STARTED', 'Not Started'
+        PENDING = 'PENDING', 'Payment Pending'
+        SUBMITTED = 'SUBMITTED', 'Verification Pending'
+        VERIFIED = 'VERIFIED', 'Payment Verified'
+        REJECTED = 'REJECTED', 'Payment Rejected'
+
+    class TrialStatus(models.TextChoices):
+        LOCKED = 'LOCKED', 'Complete Payment First'
+        ELIGIBLE = 'ELIGIBLE', 'Eligible for Trial'
+        INVITED = 'INVITED', 'Invited'
+        SCHEDULED = 'SCHEDULED', 'Scheduled'
+        ATTENDED = 'ATTENDED', 'Attended'
+        SELECTED = 'SELECTED', 'Selected'
+        REJECTED = 'REJECTED', 'Not Selected'
+        WAITLISTED = 'WAITLISTED', 'Waitlisted'
+
     user = models.OneToOneField('accounts.User', on_delete=models.CASCADE, null=True, blank=True, related_name='player_registration')
     player = models.OneToOneField('players.PlayerProfile', on_delete=models.SET_NULL, null=True, blank=True, related_name='registration_application')
     session_key = models.CharField(max_length=64, blank=True, db_index=True)
@@ -767,6 +784,18 @@ class PlayerRegistrationApplication(models.Model):
     emergency_contact_phone = models.CharField(max_length=30, blank=True)
     fee_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     payment_reference = models.CharField(max_length=120, blank=True)
+    payment_status = models.CharField(
+        max_length=20,
+        choices=PaymentStatus.choices,
+        default=PaymentStatus.NOT_STARTED,
+        db_index=True,
+    )
+    trial_status = models.CharField(
+        max_length=20,
+        choices=TrialStatus.choices,
+        default=TrialStatus.LOCKED,
+        db_index=True,
+    )
     status = models.CharField(max_length=30, choices=Status.choices, default=Status.DRAFT, db_index=True)
     consent_accepted = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -779,6 +808,166 @@ class PlayerRegistrationApplication(models.Model):
 
     def __str__(self):
         return f'{self.full_name} - {self.get_status_display()}'
+
+
+class PlayerPaymentTransaction(models.Model):
+    class Status(models.TextChoices):
+        CREATED = 'CREATED', 'Created'
+        SUBMITTED = 'SUBMITTED', 'Submitted'
+        VERIFIED = 'VERIFIED', 'Verified'
+        REJECTED = 'REJECTED', 'Rejected'
+        FAILED = 'FAILED', 'Failed'
+
+    class Provider(models.TextChoices):
+        MANUAL = 'MANUAL', 'Manual'
+        RAZORPAY = 'RAZORPAY', 'Razorpay'
+
+    application = models.ForeignKey(
+        PlayerRegistrationApplication,
+        on_delete=models.CASCADE,
+        related_name='payments',
+    )
+    user = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.CASCADE,
+        related_name='player_payments',
+    )
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    reference = models.CharField(max_length=120, unique=True, db_index=True)
+    provider = models.CharField(
+        max_length=20,
+        choices=Provider.choices,
+        default=Provider.MANUAL,
+        db_index=True,
+    )
+    gateway_order_id = models.CharField(max_length=120, blank=True, db_index=True)
+    gateway_payment_id = models.CharField(max_length=120, blank=True, db_index=True)
+    gateway_signature = models.CharField(max_length=255, blank=True)
+    gateway_payload = models.JSONField(default=dict, blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.SUBMITTED,
+        db_index=True,
+    )
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    reviewed_by = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reviewed_player_payments',
+    )
+    review_note = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ['-submitted_at']
+
+    def __str__(self):
+        return f'{self.reference} - {self.get_status_display()}'
+
+
+class PlayerTrialEvent(models.Model):
+    class Status(models.TextChoices):
+        DRAFT = 'DRAFT', 'Draft'
+        OPEN = 'OPEN', 'Open'
+        COMPLETED = 'COMPLETED', 'Completed'
+        CANCELLED = 'CANCELLED', 'Cancelled'
+
+    tenant = models.ForeignKey(
+        'accounts.Tenant',
+        on_delete=models.CASCADE,
+        related_name='player_trials',
+    )
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    venue = models.CharField(max_length=255)
+    starts_at = models.DateTimeField()
+    capacity = models.PositiveIntegerField(default=50)
+    status = models.CharField(
+        max_length=20, choices=Status.choices, default=Status.DRAFT, db_index=True
+    )
+    created_by = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='created_player_trials',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['starts_at']
+
+    def __str__(self):
+        return f'{self.title} - {self.tenant.name}'
+
+
+class PlayerTrialInvitation(models.Model):
+    application = models.ForeignKey(
+        PlayerRegistrationApplication,
+        on_delete=models.CASCADE,
+        related_name='trial_invitations',
+    )
+    trial = models.ForeignKey(
+        PlayerTrialEvent,
+        on_delete=models.CASCADE,
+        related_name='invitations',
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=PlayerRegistrationApplication.TrialStatus.choices,
+        default=PlayerRegistrationApplication.TrialStatus.INVITED,
+        db_index=True,
+    )
+    invited_at = models.DateTimeField(auto_now_add=True)
+    scheduled_at = models.DateTimeField(null=True, blank=True)
+    attended_at = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['application', 'trial'],
+                name='unique_player_application_trial',
+            )
+        ]
+        ordering = ['-invited_at']
+
+    def __str__(self):
+        return f'{self.application.full_name} - {self.trial.title}'
+
+
+class PlayerTrialEvaluation(models.Model):
+    class Recommendation(models.TextChoices):
+        SELECT = 'SELECT', 'Select'
+        REJECT = 'REJECT', 'Reject'
+        WAITLIST = 'WAITLIST', 'Waitlist'
+
+    invitation = models.OneToOneField(
+        PlayerTrialInvitation,
+        on_delete=models.CASCADE,
+        related_name='evaluation',
+    )
+    batting_score = models.PositiveSmallIntegerField(default=0)
+    bowling_score = models.PositiveSmallIntegerField(default=0)
+    fielding_score = models.PositiveSmallIntegerField(default=0)
+    fitness_score = models.PositiveSmallIntegerField(default=0)
+    notes = models.TextField(blank=True)
+    recommendation = models.CharField(
+        max_length=20, choices=Recommendation.choices
+    )
+    evaluated_by = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='player_trial_evaluations',
+    )
+    evaluated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'Evaluation: {self.invitation}'
 
 
 class ContactSubmission(models.Model):

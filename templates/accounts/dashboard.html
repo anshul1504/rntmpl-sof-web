@@ -32,7 +32,7 @@
         flex-shrink: 0;
         background: var(--gold-light);
         color: var(--gold-primary);
-        border: 1px solid rgba(37,99,235,0.12);
+        border: 1px solid rgba(255,201,40,0.28);
     }
     .match-card {
         border: 1px solid var(--border-color);
@@ -68,12 +68,12 @@
         justify-content: center;
         font-size: 11px;
         font-weight: 700;
-        color: #2563eb;
-        background: rgba(37,99,235,0.08);
+        color: #ffc928;
+        background: rgba(255,201,40,0.16);
         flex-shrink: 0;
     }
     .welcome-banner {
-        background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+        background: linear-gradient(135deg, #000 0%, #171717 100%);
         padding: 28px 32px;
         position: relative;
         overflow: hidden;
@@ -87,12 +87,78 @@
         width: 250px;
         height: 250px;
         border-radius: 50%;
-        background: rgba(37,99,235,0.15);
+        background: rgba(255,201,40,0.16);
     }
 </style>
 {% endblock %}
 
 {% block content %}
+{% if not is_organization_dashboard %}
+<div class="welcome-banner">
+  <div style="position:relative;z-index:2">
+    <p class="text-primary fw-semibold mb-2">RNT MPL PERSONAL WORKSPACE</p>
+    <h2 class="text-white fw-bold mb-2">
+      {% if is_player_dashboard %}Player Dashboard
+      {% elif is_trial_dashboard %}Trial Candidate Dashboard
+      {% else %}Guest Dashboard{% endif %}
+    </h2>
+    <p class="text-white-50 mb-0">Welcome, {{ user.full_name|default:user.email }}.</p>
+  </div>
+</div>
+
+{% if player_registration_application %}
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card premium-card">
+      <div class="card-body p-4">
+        <span class="badge bg-primary-subtle text-primary mb-3">PLAYER JOURNEY</span>
+        <h3 class="fw-bold">{{ player_registration_application.full_name }}</h3>
+        <p class="text-secondary">Payment: <strong>{{ player_registration_application.get_payment_status_display }}</strong></p>
+        <p class="text-secondary">Trial: <strong>{{ player_registration_application.get_trial_status_display }}</strong></p>
+        {% if is_guest_dashboard %}
+          {% if player_registration_application.payment_status == 'SUBMITTED' %}
+          <div class="alert alert-warning">Your payment reference is under verification. Player access is not active yet.</div>
+          {% else %}
+          <a class="btn btn-primary" href="{% url 'publicsite:player-payment' %}">Complete Registration Payment</a>
+          {% endif %}
+        {% elif is_trial_dashboard %}
+          <div class="alert alert-success">Payment verified. You are eligible for organizer trials.</div>
+          {% for invitation in trial_invitations %}
+          <div class="border rounded p-3 mb-2">
+            <strong>{{ invitation.trial.title }}</strong>
+            <div class="small text-secondary">{{ invitation.trial.tenant.name }} &middot; {{ invitation.trial.starts_at|date:"d M Y, h:i A" }} &middot; {{ invitation.trial.venue }}</div>
+            <span class="badge bg-info-subtle text-info mt-2">{{ invitation.get_status_display }}</span>
+          </div>
+          {% empty %}<p class="text-secondary">No trial invitation yet. Eligible applications are visible to organizers.</p>{% endfor %}
+        {% elif is_player_dashboard %}
+          <div class="alert alert-success">You have been selected and your player profile is active.</div>
+          {% if player_registration_application.player %}
+          <a class="btn btn-primary" href="{% url 'players:player-detail' player_registration_application.player.pk %}">Open Player Profile</a>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card premium-card"><div class="card-body p-4">
+      <h5 class="fw-bold">Journey Progress</h5>
+      <ol class="text-secondary ps-3">
+        <li>Account verified</li>
+        <li>Payment verification</li>
+        <li>Organizer trial</li>
+        <li>Selection and activation</li>
+      </ol>
+    </div></div>
+  </div>
+</div>
+{% else %}
+<div class="card premium-card"><div class="card-body p-5 text-center">
+  <h3 class="fw-bold">Welcome to RNT MPL</h3>
+  <p class="text-secondary">Start your cricket journey from the public registration flow.</p>
+  <a class="btn btn-primary" href="{% url 'publicsite:registration-choice' %}">Explore Registration</a>
+</div></div>
+{% endif %}
+{% else %}
 {% if player_registration_application %}
 <div class="rnt-player-registration-status">
   <div><span>PLAYER REGISTRATION</span><h3>{{ player_registration_application.get_status_display }}</h3><p>Your cricket profile is saved and linked with this account.</p></div>
@@ -107,7 +173,7 @@
     <div style="position: relative; z-index: 2;">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
             <div>
-                <h2 class="fw-bold text-white mb-1">Welcome back, {{ user.first_name|default:user.email }}! 👋</h2>
+                <h2 class="fw-bold text-white mb-1">Welcome back, {{ user.first_name|default:user.email }}!</h2>
                 <p class="text-white-50 mb-0 small">
                     {% if current_tenant %}
                         <i class="bi bi-shield-fill-check me-1 text-primary"></i>
@@ -222,13 +288,13 @@
                 </div>
                 <div class="d-flex gap-3 mt-3 flex-wrap justify-content-center">
                     <div class="d-flex align-items-center gap-1" style="font-size: 12px;">
-                        <div style="width: 10px; height: 10px; background: #2563eb;"></div><span>Players</span>
+                        <div style="width: 10px; height: 10px; background: #ffc928;"></div><span>Players</span>
                     </div>
                     <div class="d-flex align-items-center gap-1" style="font-size: 12px;">
-                        <div style="width: 10px; height: 10px; background: #3b82f6;"></div><span>Teams</span>
+                        <div style="width: 10px; height: 10px; background: #d99b00;"></div><span>Teams</span>
                     </div>
                     <div class="d-flex align-items-center gap-1" style="font-size: 12px;">
-                        <div style="width: 10px; height: 10px; background: #93c5fd;"></div><span>Tournaments</span>
+                        <div style="width: 10px; height: 10px; background: #111111;"></div><span>Tournaments</span>
                     </div>
                 </div>
             </div>
@@ -358,14 +424,14 @@
                                     {% if t.logo %}
                                     <img src="{{ t.logo.url }}" alt="{{ t.name }}" style="width: 28px; height: 28px; object-fit: contain;">
                                     {% else %}
-                                    <div class="d-flex align-items-center justify-content-center fw-bold text-white" style="width: 28px; height: 28px; background: linear-gradient(135deg, #2563eb, #1d4ed8); font-size: 10px;">
+                                    <div class="d-flex align-items-center justify-content-center fw-bold text-white" style="width: 28px; height: 28px; background: linear-gradient(135deg, #ffc928, #d99b00); font-size: 10px;">
                                         {{ t.name|slice:":2"|upper }}
                                     </div>
                                     {% endif %}
                                     <a href="{% url 'tournaments:tournament-detail' t.pk %}" class="fw-semibold text-decoration-none small">{{ t.name }}</a>
                                 </div>
                             </td>
-                            <td class="text-secondary small">{{ t.city|default:"—" }}</td>
+                            <td class="text-secondary small">{{ t.city|default:"&mdash;" }}</td>
                             <td>
                                 <span class="badge {% if t.is_active %}bg-success-subtle text-success{% else %}bg-secondary-subtle text-secondary{% endif %}" style="font-size: 9px;">
                                     {% if t.is_active %}Active{% else %}Inactive{% endif %}
@@ -465,7 +531,7 @@
                                 </td>
                                 <td class="text-secondary small">{{ membership.tenant.get_tenant_type_display }}</td>
                                 <td>
-                                    <span class="badge text-primary" style="background: rgba(37,99,235,0.08); border: 1px solid rgba(37,99,235,0.18); font-size: 10px;">
+                                    <span class="badge text-primary" style="background: rgba(255,201,40,0.16); border: 1px solid rgba(255,201,40,0.32); font-size: 10px;">
                                         {{ membership.role.name|default:"Member" }}
                                     </span>
                                 </td>
@@ -500,7 +566,7 @@
             </div>
             <div class="card-body" style="max-height: 320px; overflow-y: auto;">
                 {% if recent_activity %}
-                <ul class="list-unstyled mb-0" style="padding-left: 12px; border-left: 2px solid rgba(37, 99, 235, 0.15);">
+                <ul class="list-unstyled mb-0" style="padding-left: 12px; border-left: 2px solid rgba(255, 201, 40, 0.2);">
                     {% for log in recent_activity %}
                     <li class="position-relative mb-3 pb-2 border-bottom" style="border-bottom-style: dashed !important; border-bottom-color: var(--border-color) !important;">
                         <div class="position-absolute bg-primary rounded-circle" style="left: -17px; top: 6px; width: 8px; height: 8px;"></div>
@@ -527,9 +593,11 @@
     </div>
 </div>
 
+{% endif %}
 {% endblock %}
 
 {% block extra_scripts %}
+{% if is_organization_dashboard %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Line Chart (Ecosystem Analytics - simulated trend)
@@ -542,8 +610,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 {
                     label: 'Players',
                     data: [5, 8, 12, 15, 18, {{ total_players|default:0 }}, {{ total_players|default:0 }}, {{ total_players|default:0 }}, {{ total_players|default:0 }}, {{ total_players|default:0 }}, {{ total_players|default:0 }}, {{ total_players|default:0 }}],
-                    borderColor: '#2563eb',
-                    backgroundColor: 'rgba(37, 99, 235, 0.06)',
+                    borderColor: '#ffc928',
+                    backgroundColor: 'rgba(255, 201, 40, 0.12)',
                     borderWidth: 2.5,
                     fill: true,
                     tension: 0.4,
@@ -588,7 +656,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     {{ total_teams|default:1 }},
                     {{ total_tournaments|default:1 }}
                 ],
-                backgroundColor: ['#2563eb', '#3b82f6', '#93c5fd'],
+                backgroundColor: ['#ffc928', '#d99b00', '#111111'],
                 borderWidth: 0,
             }]
         },
@@ -601,4 +669,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+{% endif %}
 {% endblock %}
+

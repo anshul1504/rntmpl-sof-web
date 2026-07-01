@@ -1,0 +1,9 @@
+{% extends "accounts/base.html" %}
+{% block title %}Evaluate Player Trial{% endblock %}
+{% block content %}
+<div class="card premium-card mx-auto" style="max-width:760px"><div class="card-body p-4">
+<h2 class="fw-bold">Evaluate {{ invitation.application.full_name }}</h2>
+<p class="text-secondary">{{ invitation.trial.title }}</p>
+<form method="post">{% csrf_token %}{{ form.as_p }}<button class="btn btn-primary">Save Decision</button></form>
+</div></div>
+{% endblock %}

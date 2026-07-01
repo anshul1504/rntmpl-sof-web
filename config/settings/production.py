@@ -2,6 +2,14 @@ from .base import *  # noqa
 
 import os
 
+
+def env_bool(name, default):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.lower() in ('true', '1', 'yes', 'on')
+
+
 DEBUG = False
 
 ALLOWED_HOSTS = os.environ.get(
@@ -32,16 +40,16 @@ DATABASES = {
 }
 
 # Security
-SECURE_SSL_REDIRECT = True
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+SECURE_SSL_REDIRECT = env_bool('DJANGO_SECURE_SSL_REDIRECT', True)
+SESSION_COOKIE_SECURE = env_bool('DJANGO_SESSION_COOKIE_SECURE', True)
+CSRF_COOKIE_SECURE = env_bool('DJANGO_CSRF_COOKIE_SECURE', True)
 CSRF_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_SAMESITE = 'Lax'
-SECURE_HSTS_SECONDS = 31536000
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_HSTS_PRELOAD = True
-SECURE_BROWSER_XSS_FILTER = True
-SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_HSTS_SECONDS = int(os.environ.get('DJANGO_SECURE_HSTS_SECONDS', 31536000))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool('DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS', True)
+SECURE_HSTS_PRELOAD = env_bool('DJANGO_SECURE_HSTS_PRELOAD', True)
+SECURE_BROWSER_XSS_FILTER = env_bool('DJANGO_SECURE_BROWSER_XSS_FILTER', True)
+SECURE_CONTENT_TYPE_NOSNIFF = env_bool('DJANGO_SECURE_CONTENT_TYPE_NOSNIFF', True)
 
 # CORS
 CORS_ALLOW_ALL_ORIGINS = False
@@ -59,7 +67,14 @@ SESSION_CACHE_ALIAS = 'default'
 
 # Email (SMTP)
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_USE_TLS = True
+EMAIL_HOST = os.environ.get('EMAIL_HOST', EMAIL_HOST)
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', EMAIL_PORT))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() in ('true', '1')
+EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'False').lower() in ('true', '1')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', EMAIL_HOST_USER)
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', EMAIL_HOST_PASSWORD)
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', DEFAULT_FROM_EMAIL)
+SERVER_EMAIL = os.environ.get('SERVER_EMAIL', DEFAULT_FROM_EMAIL)
 
 # AWS S3 Storage
 if os.environ.get('AWS_STORAGE_BUCKET_NAME'):

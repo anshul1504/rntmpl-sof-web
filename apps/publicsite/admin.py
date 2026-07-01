@@ -25,6 +25,10 @@ from apps.publicsite.models import (
     PartnerOpportunity,
     PublicContentPage,
     PlayerRegistrationApplication,
+    PlayerPaymentTransaction,
+    PlayerTrialEvent,
+    PlayerTrialInvitation,
+    PlayerTrialEvaluation,
     PublicFAQ,
     FAQPageSettings,
     PartnerPageSettings,
@@ -395,6 +399,60 @@ class PlayerRegistrationApplicationAdmin(admin.ModelAdmin):
     fields = tuple(field.name for field in PlayerRegistrationApplication._meta.fields)
     list_editable = ('status',)
     date_hierarchy = 'created_at'
+
+
+@admin.register(PlayerPaymentTransaction)
+class PlayerPaymentTransactionAdmin(admin.ModelAdmin):
+    list_display = (
+        'reference', 'provider', 'user', 'amount', 'status', 'submitted_at', 'reviewed_by'
+    )
+    list_filter = ('provider', 'status', 'submitted_at')
+    search_fields = (
+        'reference', 'gateway_order_id', 'gateway_payment_id',
+        'user__email', 'application__full_name',
+        'application__phone',
+    )
+    readonly_fields = (
+        'application', 'user', 'amount', 'reference', 'provider',
+        'gateway_order_id', 'gateway_payment_id', 'gateway_signature',
+        'gateway_payload', 'submitted_at', 'reviewed_at', 'reviewed_by',
+    )
+    actions = ('verify_payments', 'reject_payments')
+
+    @admin.action(description='Verify selected player payments')
+    def verify_payments(self, request, queryset):
+        from apps.accounts.onboarding import review_player_payment
+        for payment in queryset:
+            if payment.status == PlayerPaymentTransaction.Status.SUBMITTED:
+                review_player_payment(payment, request.user, True)
+
+    @admin.action(description='Reject selected player payments')
+    def reject_payments(self, request, queryset):
+        from apps.accounts.onboarding import review_player_payment
+        for payment in queryset:
+            if payment.status == PlayerPaymentTransaction.Status.SUBMITTED:
+                review_player_payment(payment, request.user, False)
+
+
+@admin.register(PlayerTrialEvent)
+class PlayerTrialEventAdmin(admin.ModelAdmin):
+    list_display = ('title', 'tenant', 'starts_at', 'capacity', 'status')
+    list_filter = ('status', 'tenant')
+    search_fields = ('title', 'tenant__name', 'venue')
+
+
+@admin.register(PlayerTrialInvitation)
+class PlayerTrialInvitationAdmin(admin.ModelAdmin):
+    list_display = ('application', 'trial', 'status', 'scheduled_at', 'attended_at')
+    list_filter = ('status', 'trial__tenant')
+    search_fields = ('application__full_name', 'application__email', 'trial__title')
+
+
+@admin.register(PlayerTrialEvaluation)
+class PlayerTrialEvaluationAdmin(admin.ModelAdmin):
+    list_display = ('invitation', 'recommendation', 'evaluated_by', 'evaluated_at')
+    list_filter = ('recommendation', 'invitation__trial__tenant')
+    search_fields = ('invitation__application__full_name', 'notes')
 
 
 @admin.register(ContactSubmission)

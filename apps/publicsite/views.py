@@ -1,14 +1,25 @@
 from datetime import timedelta
 
+from django.conf import settings
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 from django.db.models import Q
 from django.db import transaction
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
-from django.http import HttpResponse
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views.generic import DetailView, FormView, ListView, TemplateView, View
 
+from apps.accounts.forms import OrganizerApplicationForm
+from apps.accounts.models import OrganizerApplication, PaymentLedger, PaymentWebhookEvent
+from apps.accounts.saas import (
+    create_organizer_plan_payment,
+    enqueue_notification,
+    process_razorpay_payment_captured,
+)
 from apps.scoring.models import BatterInnings, BowlerFigures, Innings, MatchState
 from apps.tournaments.models import (
     Tournament,
@@ -25,7 +36,7 @@ from apps.publicsite.models import (
     AboutLeader, AboutPageSettings, AboutValue,
     BlogSettings, CareerPageSettings, ContactFAQ, ContactPageSettings,
     ContactSubmission, EventPageSettings, GalleryItem, GalleryPageSettings,
-    PlayerRegistrationApplication,
+    PlayerRegistrationApplication, PlayerPaymentTransaction,
     HeroSlide, HomePage, JobApplication, JobOpening,
     NewsPageSettings, NewsPost, PartnerEnquiry, PartnerFAQ, PartnerLogo,
     PartnerOpportunity, PartnerPageSettings, PublicContentPage, PublicFAQ,
@@ -39,6 +50,11 @@ from apps.publicsite.forms import (
     PartnerEnquiryForm,
     SponsorEnquiryForm, PlayerJourneyPersonalForm, PlayerJourneyCricketForm,
     PlayerJourneyExperienceForm, PaymentReferenceForm,
+)
+from apps.publicsite.payments import (
+    RazorpayPaymentService,
+    razorpay_is_configured,
+    verify_razorpay_webhook_signature,
 )
 
 
@@ -476,6 +492,66 @@ class RegistrationChoiceView(GuestWelcomeView):
     template_name = 'website/registration_choice.html'
 
 
+class OrganizerSignupView(LoginRequiredMixin, FormView):
+    form_class = OrganizerApplicationForm
+    template_name = 'website/organizer_signup.html'
+    success_url = reverse_lazy('publicsite:organizer-application-status')
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        with transaction.atomic():
+            application = form.save(commit=False)
+            application.user = self.request.user
+            application.save()
+            if application.plan.price > 0:
+                create_organizer_plan_payment(application)
+            enqueue_notification(
+                event_type='organizer.application.submitted',
+                recipient=application.email,
+                user=self.request.user,
+                subject='RNT MPL organizer application received',
+                body='Your organizer application has been submitted for review.',
+                payload={
+                    'application_id': application.pk,
+                    'plan': application.plan.code,
+                },
+            )
+        messages.success(
+            self.request,
+            'Organizer application submitted. Our platform team will review it and provision your organization.',
+        )
+        return super().form_valid(form)
+
+
+class OrganizerApplicationStatusView(LoginRequiredMixin, ListView):
+    model = OrganizerApplication
+    template_name = 'website/organizer_application_status.html'
+    context_object_name = 'applications'
+
+    def get_queryset(self):
+        return (
+            OrganizerApplication.objects.filter(user=self.request.user)
+            .select_related('plan', 'tenant', 'subscription')
+            .prefetch_related('payment_ledger')
+            .order_by('-created_at')
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['site'] = WebsiteSettings.objects.first() or WebsiteSettings()
+        context['page'] = HomePage.objects.filter(is_published=True).first() or HomePage()
+        context['pending_payments'] = PaymentLedger.objects.filter(
+            user=self.request.user,
+            purpose=PaymentLedger.Purpose.ORGANIZER_PLAN,
+            status__in=[PaymentLedger.Status.CREATED, PaymentLedger.Status.PENDING],
+        ).select_related('organizer_application', 'organizer_application__plan')
+        return context
+
+
 class PlayerJourneyView(View):
     template_name = 'website/player_journey.html'
 
@@ -540,6 +616,11 @@ class PlayerPaymentView(FormView):
         if not request.user.is_authenticated:
             return redirect('accounts:login')
         self.application = get_object_or_404(PlayerRegistrationApplication, user=request.user)
+        if self.application.payment_status in {
+            PlayerRegistrationApplication.PaymentStatus.SUBMITTED,
+            PlayerRegistrationApplication.PaymentStatus.VERIFIED,
+        }:
+            return redirect('accounts:dashboard')
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -547,20 +628,182 @@ class PlayerPaymentView(FormView):
         context['site'] = WebsiteSettings.objects.first() or WebsiteSettings()
         context['page'] = HomePage.objects.filter(is_published=True).first() or HomePage()
         context['application'] = self.application
+        context['razorpay_enabled'] = razorpay_is_configured()
+        if context['razorpay_enabled']:
+            try:
+                payment = self._get_or_create_razorpay_order()
+                context.update({
+                    'razorpay_key_id': settings.RAZORPAY_KEY_ID,
+                    'razorpay_order_id': payment.gateway_order_id,
+                    'razorpay_amount': int(payment.amount * 100),
+                    'razorpay_currency': getattr(settings, 'RAZORPAY_CURRENCY', 'INR'),
+                    'razorpay_verify_url': reverse('publicsite:player-payment-verify'),
+                })
+            except Exception as exc:
+                context['razorpay_enabled'] = False
+                messages.error(
+                    self.request,
+                    f'Payment gateway is temporarily unavailable: {exc}'
+                )
         return context
 
+    def _get_or_create_razorpay_order(self):
+        existing = self.application.payments.filter(
+            provider=PlayerPaymentTransaction.Provider.RAZORPAY,
+            status=PlayerPaymentTransaction.Status.CREATED,
+        ).order_by('-submitted_at').first()
+        if existing:
+            return existing
+        receipt = f'player-{self.application.pk}-{timezone.now():%Y%m%d%H%M%S}'
+        order = RazorpayPaymentService.create_order(
+            amount=self.application.fee_amount,
+            receipt=receipt,
+            notes={
+                'application_id': str(self.application.pk),
+                'player': self.application.full_name,
+                'email': self.application.email or self.request.user.email,
+            },
+        )
+        order_id = order['id']
+        return PlayerPaymentTransaction.objects.create(
+            application=self.application,
+            user=self.request.user,
+            amount=self.application.fee_amount,
+            reference=order_id,
+            provider=PlayerPaymentTransaction.Provider.RAZORPAY,
+            gateway_order_id=order_id,
+            gateway_payload=order,
+            status=PlayerPaymentTransaction.Status.CREATED,
+        )
+
     def form_valid(self, form):
-        self.application.payment_reference = form.cleaned_data['payment_reference']
+        reference = form.cleaned_data['payment_reference']
+        PlayerPaymentTransaction.objects.create(
+            application=self.application,
+            user=self.request.user,
+            amount=self.application.fee_amount,
+            reference=reference,
+        )
+        self.application.payment_reference = reference
         self.application.status = PlayerRegistrationApplication.Status.PAYMENT_SUBMITTED
-        self.application.save(update_fields=['payment_reference', 'status', 'updated_at'])
+        self.application.payment_status = (
+            PlayerRegistrationApplication.PaymentStatus.SUBMITTED
+        )
+        self.application.save(
+            update_fields=[
+                'payment_reference', 'status', 'payment_status', 'updated_at'
+            ]
+        )
         messages.success(self.request, 'Payment reference submitted. Verification is pending.')
         return redirect('accounts:dashboard')
+
+
+class PlayerPaymentVerifyView(View):
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('accounts:login')
+        order_id = request.POST.get('razorpay_order_id', '').strip()
+        payment_id = request.POST.get('razorpay_payment_id', '').strip()
+        signature = request.POST.get('razorpay_signature', '').strip()
+        payment = get_object_or_404(
+            PlayerPaymentTransaction.objects.select_related('application', 'user'),
+            user=request.user,
+            provider=PlayerPaymentTransaction.Provider.RAZORPAY,
+            gateway_order_id=order_id,
+        )
+        if not RazorpayPaymentService.verify_signature(
+            order_id=order_id,
+            payment_id=payment_id,
+            signature=signature,
+        ):
+            payment.status = PlayerPaymentTransaction.Status.FAILED
+            payment.gateway_payment_id = payment_id
+            payment.gateway_signature = signature
+            payment.save(update_fields=[
+                'status', 'gateway_payment_id', 'gateway_signature'
+            ])
+            messages.error(request, 'Payment verification failed. Please try again.')
+            return redirect('publicsite:player-payment')
+
+        with transaction.atomic():
+            payment = PlayerPaymentTransaction.objects.select_for_update().get(pk=payment.pk)
+            payment.status = PlayerPaymentTransaction.Status.VERIFIED
+            payment.gateway_payment_id = payment_id
+            payment.gateway_signature = signature
+            payment.reviewed_at = timezone.now()
+            payment.review_note = 'Verified automatically by Razorpay signature.'
+            payment.save(update_fields=[
+                'status', 'gateway_payment_id', 'gateway_signature',
+                'reviewed_at', 'review_note'
+            ])
+
+            application = payment.application
+            application.payment_reference = payment_id
+            application.payment_status = PlayerRegistrationApplication.PaymentStatus.VERIFIED
+            application.trial_status = PlayerRegistrationApplication.TrialStatus.ELIGIBLE
+            application.status = PlayerRegistrationApplication.Status.PAYMENT_SUBMITTED
+            application.save(update_fields=[
+                'payment_reference', 'payment_status', 'trial_status',
+                'status', 'updated_at'
+            ])
+
+            user = payment.user
+            user.onboarding_state = user.OnboardingState.PLAYER_TRIAL_ELIGIBLE
+            user.save(update_fields=['onboarding_state'])
+
+        messages.success(request, 'Payment verified. Your trial dashboard is now unlocked.')
+        return redirect('accounts:dashboard')
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class RazorpayWebhookView(View):
+    def post(self, request):
+        signature = request.headers.get('X-Razorpay-Signature', '')
+        raw_body = request.body
+        if not verify_razorpay_webhook_signature(raw_body, signature):
+            return HttpResponseBadRequest('Invalid signature')
+        try:
+            import json
+            payload = json.loads(raw_body.decode('utf-8') or '{}')
+        except ValueError:
+            return HttpResponseBadRequest('Invalid JSON')
+
+        event_type = payload.get('event', '')
+        event_id = payload.get('id') or payload.get('event_id') or f'{event_type}:{payload.get("created_at", "")}'
+        event, created = PaymentWebhookEvent.objects.get_or_create(
+            event_id=event_id,
+            defaults={
+                'event_type': event_type,
+                'payload': payload,
+                'signature': signature,
+                'is_valid': True,
+                'processed_at': timezone.now(),
+            },
+        )
+        if not created:
+            return JsonResponse({'status': 'duplicate', 'event_id': event.event_id})
+        if event_type == 'payment.captured':
+            try:
+                processed_payment = process_razorpay_payment_captured(payload)
+                if processed_payment:
+                    event.processed_at = timezone.now()
+                    event.save(update_fields=['processed_at', 'updated_at'])
+            except Exception as exc:
+                event.processing_error = str(exc)
+                event.save(update_fields=['processing_error', 'updated_at'])
+                return JsonResponse({'status': 'error', 'event_id': event.event_id}, status=500)
+
+        return JsonResponse({'status': 'accepted', 'event_id': event.event_id})
 
 
 def player_registration_entry(request):
     if request.user.is_authenticated:
         application = PlayerRegistrationApplication.objects.filter(user=request.user).first()
-        if application and application.status == PlayerRegistrationApplication.Status.PAYMENT_PENDING:
+        if application and application.payment_status in {
+            PlayerRegistrationApplication.PaymentStatus.NOT_STARTED,
+            PlayerRegistrationApplication.PaymentStatus.PENDING,
+            PlayerRegistrationApplication.PaymentStatus.REJECTED,
+        }:
             return redirect('publicsite:player-payment')
         return redirect('accounts:dashboard')
     return redirect('publicsite:player-journey', step=1)
@@ -761,6 +1004,7 @@ def sitemap_xml(request):
         reverse('publicsite:sponsors'), reverse('publicsite:careers'),
         reverse('publicsite:team-list'), reverse('publicsite:gallery'),
         reverse('publicsite:live-scores'), reverse('publicsite:match-center'),
+        reverse('publicsite:organizer-signup'),
     ]
     static_urls += [
         reverse('publicsite:public-content', kwargs={'page_type': slug})

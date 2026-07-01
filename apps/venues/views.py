@@ -1,11 +1,12 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView
 
 from apps.accounts.models import Tenant
+from apps.accounts.saas import validate_tenant_plan_limit
 from apps.venues.forms import VenueForm, GroundForm, PitchForm
 from apps.accounts.policies import CapabilityRequiredMixin
 from apps.venues.models import Venue, Ground, Pitch
@@ -49,6 +50,11 @@ class VenueCreateView(LoginRequiredMixin, CapabilityRequiredMixin, CreateView):
         tenant = active_tenant(self.request)
         if not tenant:
             raise Http404('No active organization selected.')
+        try:
+            validate_tenant_plan_limit(tenant, 'venues')
+        except ValueError as exc:
+            messages.error(self.request, str(exc))
+            return redirect('venues:venue-list')
         form.instance.tenant = tenant
         messages.success(self.request, 'Venue created.')
         return super().form_valid(form)

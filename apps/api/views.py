@@ -1,9 +1,10 @@
 from rest_framework import viewsets
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated
 
 from apps.accounts.models import Tenant, UserTenant
 from apps.accounts.policies import user_has_tenant_capability
+from apps.accounts.saas import validate_tenant_plan_limit
 from apps.api.permissions import IsAuthenticatedReadOnly
 from apps.api.serializers import (
     PlayerProfileSerializer,
@@ -109,6 +110,7 @@ def user_can_access_tenant(user, tenant):
 
 class TenantOwnedWriteMixin:
     required_write_capability = None
+    plan_limit_resource = None
 
     def _authorize_tenant_write(self, tenant):
         if not user_can_access_tenant(self.request.user, tenant):
@@ -121,6 +123,11 @@ class TenantOwnedWriteMixin:
     def perform_create(self, serializer):
         tenant = serializer.validated_data.get('tenant')
         self._authorize_tenant_write(tenant)
+        if self.plan_limit_resource:
+            try:
+                validate_tenant_plan_limit(tenant, self.plan_limit_resource)
+            except ValueError as exc:
+                raise ValidationError({'detail': str(exc)}) from exc
         serializer.save()
 
     def perform_update(self, serializer):
@@ -160,6 +167,7 @@ class MyTenantMembershipViewSet(viewsets.ReadOnlyModelViewSet):
 
 class PlayerProfileViewSet(TenantOwnedWriteMixin, viewsets.ModelViewSet):
     required_write_capability = 'players.manage'
+    plan_limit_resource = 'players'
     serializer_class = PlayerProfileSerializer
     permission_classes = [IsAuthenticated]
     search_fields = ('first_name', 'last_name', 'city', 'state')
@@ -173,6 +181,7 @@ class PlayerProfileViewSet(TenantOwnedWriteMixin, viewsets.ModelViewSet):
 
 class TeamViewSet(TenantOwnedWriteMixin, viewsets.ModelViewSet):
     required_write_capability = 'teams.manage'
+    plan_limit_resource = 'teams'
     serializer_class = TeamSerializer
     permission_classes = [IsAuthenticated]
     search_fields = ('name', 'code', 'short_name', 'city', 'state')
@@ -187,6 +196,7 @@ class TeamViewSet(TenantOwnedWriteMixin, viewsets.ModelViewSet):
 
 class TournamentViewSet(TenantOwnedWriteMixin, viewsets.ModelViewSet):
     required_write_capability = 'tournaments.manage'
+    plan_limit_resource = 'tournaments'
     serializer_class = TournamentSerializer
     permission_classes = [IsAuthenticated]
     search_fields = ('name', 'slug', 'venue', 'city', 'state')

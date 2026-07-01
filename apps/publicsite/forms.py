@@ -7,6 +7,7 @@ from apps.publicsite.models import (
     JobOpening,
     PartnerEnquiry,
     SponsorEnquiry,
+    PlayerPaymentTransaction,
 )
 
 
@@ -204,3 +205,11 @@ class PlayerJourneyExperienceForm(forms.Form):
 
 class PaymentReferenceForm(forms.Form):
     payment_reference = forms.CharField(max_length=120, label='Payment / Transaction Reference', widget=forms.TextInput(attrs={'placeholder':'Enter UTR or transaction reference'}))
+
+    def clean_payment_reference(self):
+        reference = self.cleaned_data['payment_reference'].strip().upper()
+        if len(reference) < 6:
+            raise forms.ValidationError('Enter a valid payment reference.')
+        if PlayerPaymentTransaction.objects.filter(reference__iexact=reference).exists():
+            raise forms.ValidationError('This payment reference has already been submitted.')
+        return reference

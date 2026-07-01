@@ -3,6 +3,7 @@ Accounts & Authentication Models
 User model, Tenant system, Roles, Permissions, Sessions, Devices
 """
 from django.contrib.auth.models import AbstractUser, BaseUserManager, Group, Permission
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -67,6 +68,12 @@ class User(AbstractUser, ContactMixin, AddressMixin):
         FEMALE = 'F', 'Female'
         OTHER = 'O', 'Other'
 
+    class OnboardingState(models.TextChoices):
+        GUEST = 'GUEST', 'Guest'
+        PLAYER_PAYMENT_PENDING = 'PLAYER_PAYMENT_PENDING', 'Player Payment Pending'
+        PLAYER_TRIAL_ELIGIBLE = 'PLAYER_TRIAL_ELIGIBLE', 'Trial Eligible'
+        PLAYER_SELECTED = 'PLAYER_SELECTED', 'Selected Player'
+
     username = models.CharField(
         max_length=150, unique=True, blank=True, null=True,
         help_text='Optional username'
@@ -76,6 +83,12 @@ class User(AbstractUser, ContactMixin, AddressMixin):
     user_type = models.CharField(
         max_length=30, choices=UserType.choices,
         default=UserType.FAN, db_index=True
+    )
+    onboarding_state = models.CharField(
+        max_length=40,
+        choices=OnboardingState.choices,
+        default=OnboardingState.GUEST,
+        db_index=True,
     )
     gender = models.CharField(
         max_length=2, choices=Gender.choices, blank=True, default=''
@@ -566,3 +579,356 @@ class UserDocument(models.Model):
 
     def __str__(self):
         return f"{self.user.email} - {self.get_document_type_display()}"
+
+
+class OrganizationPlan(TimestampMixin):
+    """Commercial SaaS plan used for organizer onboarding and tenant limits."""
+
+    class BillingCycle(models.TextChoices):
+        FREE = 'FREE', 'Free'
+        MONTHLY = 'MONTHLY', 'Monthly'
+        YEARLY = 'YEARLY', 'Yearly'
+
+    name = models.CharField(max_length=120)
+    code = models.SlugField(unique=True)
+    description = models.TextField(blank=True, default='')
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    billing_cycle = models.CharField(
+        max_length=20,
+        choices=BillingCycle.choices,
+        default=BillingCycle.FREE,
+        db_index=True,
+    )
+    max_tournaments = models.PositiveIntegerField(default=1)
+    max_teams = models.PositiveIntegerField(default=8)
+    max_players = models.PositiveIntegerField(default=120)
+    max_venues = models.PositiveIntegerField(default=2)
+    max_users = models.PositiveIntegerField(default=5)
+    storage_limit_mb = models.PositiveIntegerField(default=500)
+    trial_days = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True, db_index=True)
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        verbose_name = 'Organization Plan'
+        verbose_name_plural = 'Organization Plans'
+        ordering = ['sort_order', 'price', 'name']
+
+    def __str__(self):
+        return self.name
+
+
+class OrganizerApplication(TimestampMixin):
+    """Public organizer SaaS signup request before tenant provisioning."""
+
+    class Status(models.TextChoices):
+        SUBMITTED = 'SUBMITTED', 'Submitted'
+        UNDER_REVIEW = 'UNDER_REVIEW', 'Under Review'
+        APPROVED = 'APPROVED', 'Approved'
+        REJECTED = 'REJECTED', 'Rejected'
+        PROVISIONED = 'PROVISIONED', 'Provisioned'
+        SUSPENDED = 'SUSPENDED', 'Suspended'
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='organizer_applications',
+    )
+    plan = models.ForeignKey(
+        OrganizationPlan,
+        on_delete=models.PROTECT,
+        related_name='organizer_applications',
+    )
+    tenant = models.OneToOneField(
+        Tenant,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='organizer_application',
+    )
+    organization_name = models.CharField(max_length=180)
+    tenant_type = models.CharField(
+        max_length=20,
+        choices=Tenant.TenantType.choices,
+        default=Tenant.TenantType.LEAGUE,
+    )
+    contact_person = models.CharField(max_length=120)
+    email = models.EmailField()
+    phone = models.CharField(max_length=30)
+    city = models.CharField(max_length=100, blank=True, default='')
+    state = models.CharField(max_length=100, blank=True, default='')
+    expected_teams = models.PositiveIntegerField(default=0)
+    expected_players = models.PositiveIntegerField(default=0)
+    message = models.TextField(blank=True, default='')
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.SUBMITTED,
+        db_index=True,
+    )
+    reviewed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reviewed_organizer_applications',
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    review_note = models.CharField(max_length=255, blank=True, default='')
+    provisioned_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Organizer Application'
+        verbose_name_plural = 'Organizer Applications'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['status', 'created_at']),
+            models.Index(fields=['email', 'status']),
+        ]
+
+    def __str__(self):
+        return f'{self.organization_name} - {self.get_status_display()}'
+
+
+class OrganizationSubscription(TimestampMixin):
+    """Active commercial subscription attached to a provisioned tenant."""
+
+    class Status(models.TextChoices):
+        TRIALING = 'TRIALING', 'Trialing'
+        ACTIVE = 'ACTIVE', 'Active'
+        PAST_DUE = 'PAST_DUE', 'Past Due'
+        SUSPENDED = 'SUSPENDED', 'Suspended'
+        CANCELLED = 'CANCELLED', 'Cancelled'
+
+    tenant = models.OneToOneField(
+        Tenant,
+        on_delete=models.CASCADE,
+        related_name='organization_subscription',
+    )
+    plan = models.ForeignKey(
+        OrganizationPlan,
+        on_delete=models.PROTECT,
+        related_name='subscriptions',
+    )
+    organizer_application = models.OneToOneField(
+        OrganizerApplication,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='subscription',
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.ACTIVE,
+        db_index=True,
+    )
+    current_period_start = models.DateTimeField()
+    current_period_end = models.DateTimeField(null=True, blank=True)
+    cancel_at_period_end = models.BooleanField(default=False)
+    suspended_at = models.DateTimeField(null=True, blank=True)
+    suspension_reason = models.CharField(max_length=255, blank=True, default='')
+
+    class Meta:
+        verbose_name = 'Organization Subscription'
+        verbose_name_plural = 'Organization Subscriptions'
+        ordering = ['-current_period_start']
+        indexes = [
+            models.Index(fields=['status', 'current_period_end']),
+        ]
+
+    def __str__(self):
+        return f'{self.tenant.name} - {self.plan.name} ({self.get_status_display()})'
+
+
+class PaymentLedger(TimestampMixin):
+    """Generic payment ledger for organizer plans and player registrations."""
+
+    class Purpose(models.TextChoices):
+        PLAYER_REGISTRATION = 'PLAYER_REGISTRATION', 'Player Registration'
+        ORGANIZER_PLAN = 'ORGANIZER_PLAN', 'Organizer Plan'
+
+    class Provider(models.TextChoices):
+        MANUAL = 'MANUAL', 'Manual'
+        RAZORPAY = 'RAZORPAY', 'Razorpay'
+
+    class Status(models.TextChoices):
+        CREATED = 'CREATED', 'Created'
+        PENDING = 'PENDING', 'Pending'
+        PAID = 'PAID', 'Paid'
+        FAILED = 'FAILED', 'Failed'
+        REFUNDED = 'REFUNDED', 'Refunded'
+        CANCELLED = 'CANCELLED', 'Cancelled'
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payment_ledger')
+    tenant = models.ForeignKey(Tenant, on_delete=models.SET_NULL, null=True, blank=True, related_name='payment_ledger')
+    organizer_application = models.ForeignKey(
+        OrganizerApplication,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='payment_ledger',
+    )
+    purpose = models.CharField(max_length=30, choices=Purpose.choices, db_index=True)
+    provider = models.CharField(max_length=20, choices=Provider.choices, default=Provider.MANUAL, db_index=True)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.CREATED, db_index=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    currency = models.CharField(max_length=3, default='INR')
+    reference = models.CharField(max_length=140, unique=True, db_index=True)
+    gateway_order_id = models.CharField(max_length=120, blank=True, default='', db_index=True)
+    gateway_payment_id = models.CharField(max_length=120, blank=True, default='', db_index=True)
+    gateway_payload = models.JSONField(default=dict, blank=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
+    failure_reason = models.CharField(max_length=255, blank=True, default='')
+
+    class Meta:
+        verbose_name = 'Payment Ledger'
+        verbose_name_plural = 'Payment Ledger'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['purpose', 'status']),
+            models.Index(fields=['provider', 'gateway_order_id']),
+        ]
+
+    def __str__(self):
+        return f'{self.reference} - {self.get_status_display()}'
+
+
+class PaymentReceipt(TimestampMixin):
+    """Immutable receipt/invoice-style record generated after confirmed payment."""
+
+    payment = models.OneToOneField(
+        PaymentLedger,
+        on_delete=models.CASCADE,
+        related_name='receipt',
+    )
+    receipt_number = models.CharField(max_length=40, unique=True, db_index=True)
+    issued_at = models.DateTimeField(default=timezone.now)
+    billed_to_name = models.CharField(max_length=180)
+    billed_to_email = models.EmailField()
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    currency = models.CharField(max_length=3, default='INR')
+    tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    description = models.CharField(max_length=255)
+    metadata = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        verbose_name = 'Payment Receipt'
+        verbose_name_plural = 'Payment Receipts'
+        ordering = ['-issued_at']
+
+    def __str__(self):
+        return self.receipt_number
+
+
+class PaymentReconciliation(TimestampMixin):
+    """Operational reconciliation/audit state for a payment ledger item."""
+
+    class Status(models.TextChoices):
+        PENDING = 'PENDING', 'Pending'
+        MATCHED = 'MATCHED', 'Matched'
+        MISMATCHED = 'MISMATCHED', 'Mismatched'
+        REFUNDED = 'REFUNDED', 'Refunded'
+        DISPUTED = 'DISPUTED', 'Disputed'
+
+    payment = models.OneToOneField(
+        PaymentLedger,
+        on_delete=models.CASCADE,
+        related_name='reconciliation',
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True,
+    )
+    gateway_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    gateway_currency = models.CharField(max_length=3, blank=True, default='')
+    gateway_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    gateway_tax = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    reconciled_at = models.DateTimeField(null=True, blank=True)
+    reconciled_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reconciled_payments',
+    )
+    notes = models.TextField(blank=True, default='')
+    gateway_payload = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        verbose_name = 'Payment Reconciliation'
+        verbose_name_plural = 'Payment Reconciliations'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.payment.reference} - {self.get_status_display()}'
+
+
+class PaymentWebhookEvent(TimestampMixin):
+    """Idempotent payment gateway event log."""
+
+    provider = models.CharField(max_length=20, default=PaymentLedger.Provider.RAZORPAY, db_index=True)
+    event_id = models.CharField(max_length=140, unique=True, db_index=True)
+    event_type = models.CharField(max_length=120, db_index=True)
+    payload = models.JSONField(default=dict, blank=True)
+    signature = models.CharField(max_length=255, blank=True, default='')
+    is_valid = models.BooleanField(default=False, db_index=True)
+    processed_at = models.DateTimeField(null=True, blank=True)
+    processing_error = models.TextField(blank=True, default='')
+
+    class Meta:
+        verbose_name = 'Payment Webhook Event'
+        verbose_name_plural = 'Payment Webhook Events'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.provider}:{self.event_type}:{self.event_id}'
+
+
+class NotificationOutbox(TimestampMixin):
+    """Durable outbox for business notifications across email/SMS/WhatsApp."""
+
+    class Channel(models.TextChoices):
+        EMAIL = 'EMAIL', 'Email'
+        SMS = 'SMS', 'SMS'
+        WHATSAPP = 'WHATSAPP', 'WhatsApp'
+        IN_APP = 'IN_APP', 'In App'
+
+    class Status(models.TextChoices):
+        PENDING = 'PENDING', 'Pending'
+        SENT = 'SENT', 'Sent'
+        FAILED = 'FAILED', 'Failed'
+        CANCELLED = 'CANCELLED', 'Cancelled'
+
+    tenant = models.ForeignKey(Tenant, on_delete=models.SET_NULL, null=True, blank=True, related_name='notifications')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='notifications')
+    event_type = models.CharField(max_length=80, db_index=True)
+    channel = models.CharField(max_length=20, choices=Channel.choices, default=Channel.EMAIL, db_index=True)
+    recipient = models.CharField(max_length=255)
+    subject = models.CharField(max_length=180, blank=True, default='')
+    body = models.TextField(blank=True, default='')
+    payload = models.JSONField(default=dict, blank=True)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING, db_index=True)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    next_attempt_at = models.DateTimeField(null=True, blank=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    last_error = models.TextField(blank=True, default='')
+
+    class Meta:
+        verbose_name = 'Notification Outbox'
+        verbose_name_plural = 'Notification Outbox'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['event_type', 'status']),
+            models.Index(fields=['channel', 'status']),
+        ]
+
+    def clean(self):
+        if not self.recipient:
+            raise ValidationError('Notification recipient is required.')
+
+    def __str__(self):
+        return f'{self.event_type} -> {self.recipient}'

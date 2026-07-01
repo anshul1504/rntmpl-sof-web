@@ -8,9 +8,21 @@ from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
-from apps.accounts.models import User, Tenant, OTPVerification, UserTenant, Role
+from apps.accounts.models import (
+    OrganizerApplication,
+    OrganizationPlan,
+    User,
+    Tenant,
+    OTPVerification,
+    UserTenant,
+    Role,
+)
 from apps.accounts.policies import ROLE_PRESETS
 from apps.common.encryption import hash_otp
+from apps.publicsite.models import (
+    PlayerTrialEvaluation,
+    PlayerTrialEvent,
+)
 
 
 class LoginForm(forms.Form):
@@ -224,6 +236,48 @@ class TenantCreateForm(forms.ModelForm):
         return subdomain.lower() if subdomain else ''
 
 
+class OrganizerApplicationForm(forms.ModelForm):
+    class Meta:
+        model = OrganizerApplication
+        fields = (
+            'plan', 'organization_name', 'tenant_type', 'contact_person',
+            'email', 'phone', 'city', 'state', 'expected_teams',
+            'expected_players', 'message',
+        )
+        widgets = {
+            'plan': forms.Select(attrs={'class': 'form-select'}),
+            'organization_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'League, academy or tournament name'}),
+            'tenant_type': forms.Select(attrs={'class': 'form-select'}),
+            'contact_person': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Primary contact name'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Organizer email'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Contact phone'}),
+            'city': forms.TextInput(attrs={'class': 'form-control'}),
+            'state': forms.TextInput(attrs={'class': 'form-control'}),
+            'expected_teams': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
+            'expected_players': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
+            'message': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Tell us what you want to run on RNT MPL'}),
+        }
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+        self.fields['plan'].queryset = OrganizationPlan.objects.filter(is_active=True)
+        if user and user.is_authenticated:
+            self.fields['contact_person'].initial = user.full_name
+            self.fields['email'].initial = user.email
+            self.fields['phone'].initial = user.phone
+
+    def clean(self):
+        cleaned = super().clean()
+        plan = cleaned.get('plan')
+        if plan:
+            if cleaned.get('expected_teams', 0) > plan.max_teams:
+                self.add_error('expected_teams', f'This plan supports up to {plan.max_teams} teams.')
+            if cleaned.get('expected_players', 0) > plan.max_players:
+                self.add_error('expected_players', f'This plan supports up to {plan.max_players} players.')
+        return cleaned
+
+
 class RoleForm(forms.ModelForm):
     code = forms.ChoiceField(choices=[])
 
@@ -287,3 +341,49 @@ class MembershipForm(forms.Form):
         if existing.exists():
             raise ValidationError('This user is already a member of the organization.')
         return email
+
+
+class PlayerTrialEventForm(forms.ModelForm):
+    class Meta:
+        model = PlayerTrialEvent
+        fields = ('title', 'description', 'venue', 'starts_at', 'capacity', 'status')
+        widgets = {
+            'starts_at': forms.DateTimeInput(
+                attrs={'class': 'form-control', 'type': 'datetime-local'}
+            ),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs.setdefault('class', 'form-control')
+
+
+class PlayerTrialEvaluationForm(forms.ModelForm):
+    class Meta:
+        model = PlayerTrialEvaluation
+        fields = (
+            'batting_score', 'bowling_score', 'fielding_score',
+            'fitness_score', 'notes', 'recommendation',
+        )
+        widgets = {
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            field.widget.attrs.setdefault(
+                'class', 'form-select' if name == 'recommendation' else 'form-control'
+            )
+
+    def clean(self):
+        data = super().clean()
+        for field in (
+            'batting_score', 'bowling_score', 'fielding_score', 'fitness_score'
+        ):
+            value = data.get(field)
+            if value is not None and value > 100:
+                self.add_error(field, 'Score cannot exceed 100.')
+        return data

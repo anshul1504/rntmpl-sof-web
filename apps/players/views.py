@@ -6,6 +6,7 @@ from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 
 from apps.accounts.models import Tenant
+from apps.accounts.saas import validate_tenant_plan_limit
 from apps.players.models import PlayerProfile
 from apps.players.forms import PlayerProfileForm
 from apps.accounts.policies import CapabilityRequiredMixin
@@ -67,6 +68,14 @@ class PlayerDetailView(LoginRequiredMixin, DetailView):
     def get_queryset(self):
         tenant = get_active_tenant(self.request)
         if not tenant:
+            application = getattr(
+                self.request.user, 'player_registration', None
+            )
+            if application and application.player_id:
+                return PlayerProfile.objects.filter(
+                    pk=application.player_id,
+                    is_deleted=False,
+                )
             return PlayerProfile.objects.none()
         return PlayerProfile.objects.filter(tenant=tenant, is_deleted=False)
 
@@ -103,6 +112,11 @@ class PlayerCreateView(LoginRequiredMixin, CapabilityRequiredMixin, CreateView):
         if not tenant:
             messages.error(self.request, "No active organization context found.")
             return redirect('accounts:dashboard')
+        try:
+            validate_tenant_plan_limit(tenant, 'players')
+        except ValueError as exc:
+            messages.error(self.request, str(exc))
+            return redirect('players:player-list')
         
         form.instance.tenant = tenant
         messages.success(self.request, "Player profile created successfully.")

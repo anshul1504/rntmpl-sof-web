@@ -15,6 +15,7 @@ from datetime import datetime, timedelta
 
 from apps.accounts.models import Tenant
 from apps.accounts.policies import CapabilityRequiredMixin
+from apps.accounts.saas import validate_tenant_plan_limit
 from apps.tournaments.models import (
     Tournament, TournamentTeam, TournamentPlayer, TournamentMatch,
     TournamentSponsor, TournamentAward, TournamentOfficial,
@@ -161,6 +162,11 @@ class TournamentCreateView(LoginRequiredMixin, CapabilityRequiredMixin, CreateVi
             messages.error(self.request, "No active organization context found.")
             from django.shortcuts import redirect
             return redirect('accounts:dashboard')
+        try:
+            validate_tenant_plan_limit(tenant, 'tournaments')
+        except ValueError as exc:
+            messages.error(self.request, str(exc))
+            return redirect('tournaments:tournament-list')
 
         form.instance.tenant = tenant
         

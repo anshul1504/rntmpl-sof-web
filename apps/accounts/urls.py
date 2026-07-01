@@ -41,6 +41,7 @@ urlpatterns = [
 
     # Dashboard & Profile
     path('dashboard/', views.DashboardView.as_view(), name='dashboard'),
+    path('workspaces/<slug:workspace>/', views.RoleWorkspaceView.as_view(), name='role-workspace'),
     path('profile/', views.ProfileView.as_view(), name='profile'),
     path('profile/edit/', views.ProfileEditView.as_view(), name='profile-edit'),
 
@@ -54,4 +55,10 @@ urlpatterns = [
     path('members/add/', views.MembershipCreateView.as_view(), name='membership-create'),
     path('members/<int:pk>/edit/', views.MembershipUpdateView.as_view(), name='membership-edit'),
     path('members/<int:pk>/toggle/', views.MembershipToggleView.as_view(), name='membership-toggle'),
+    path('player-trials/', views.PlayerTrialListView.as_view(), name='player-trial-list'),
+    path('player-trials/create/', views.PlayerTrialCreateView.as_view(), name='player-trial-create'),
+    path('player-trials/<int:pk>/', views.PlayerTrialDetailView.as_view(), name='player-trial-detail'),
+    path('player-trials/<int:pk>/invite/', views.PlayerTrialInviteView.as_view(), name='player-trial-invite'),
+    path('player-trial-invitations/<int:pk>/evaluate/', views.PlayerTrialEvaluationView.as_view(), name='player-trial-evaluate'),
+    path('player-trial-invitations/<int:pk>/status/<str:status>/', views.PlayerTrialStatusView.as_view(), name='player-trial-status'),
 ]

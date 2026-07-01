@@ -9,6 +9,7 @@ from django.contrib.auth.views import LoginView, LogoutView, PasswordResetView
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib import messages
 from django.db import transaction
+from django.http import Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -19,14 +20,25 @@ from django.views.generic import (
 from apps.accounts.forms import (
     LoginForm, RegisterForm, OTPRequestForm, OTPVerifyForm,
     TwoFactorForm, ProfileForm, TenantCreateForm, RoleForm, MembershipForm,
+    PlayerTrialEventForm, PlayerTrialEvaluationForm,
 )
 from apps.accounts.models import (
     OTPVerification, Role, Tenant, UserActivityLog, UserTenant,
 )
 from apps.accounts.policies import CapabilityRequiredMixin, ROLE_PRESETS
+from apps.accounts.onboarding import (
+    DashboardMode,
+    apply_trial_decision,
+    resolve_dashboard_mode,
+)
 from apps.common.encryption import hash_otp
 from apps.players.models import PlayerProfile
-from apps.publicsite.models import PlayerRegistrationApplication, WebsiteSettings
+from apps.publicsite.models import (
+    PlayerRegistrationApplication,
+    PlayerTrialEvent,
+    PlayerTrialInvitation,
+    WebsiteSettings,
+)
 from apps.teams.models import Team
 from apps.tournaments.models import Tournament
 
@@ -280,7 +292,12 @@ class VerifyOTPView(FormView):
                     password=password,
                     full_name=full_name,
                     phone=phone,
-                    user_type=User.UserType.PLAYER if registration_type == 'PLAYER' else User.UserType.FAN,
+                    user_type=User.UserType.FAN,
+                    onboarding_state=(
+                        User.OnboardingState.PLAYER_PAYMENT_PENDING
+                        if registration_type == 'PLAYER'
+                        else User.OnboardingState.GUEST
+                    ),
                     is_active=True,
                     email_verified=True,
                     is_verified=True,
@@ -305,6 +322,7 @@ class VerifyOTPView(FormView):
                         weight_kg=journey.get('weight_kg') or None,
                         email=email,
                         biography=journey.get('achievements', ''),
+                        player_status='INACTIVE',
                     )
                     site = WebsiteSettings.objects.first()
                     PlayerRegistrationApplication.objects.create(
@@ -327,6 +345,8 @@ class VerifyOTPView(FormView):
                         consent_accepted=journey.get('consent_accepted') == 'True',
                         fee_amount=site.registration_fee if site else 0,
                         status=PlayerRegistrationApplication.Status.PAYMENT_PENDING,
+                        payment_status=PlayerRegistrationApplication.PaymentStatus.PENDING,
+                        trial_status=PlayerRegistrationApplication.TrialStatus.LOCKED,
                     )
 
             # Send welcome email
@@ -429,8 +449,22 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['player_registration_application'] = PlayerRegistrationApplication.objects.filter(user=self.request.user).first()
+        application = PlayerRegistrationApplication.objects.filter(
+            user=self.request.user
+        ).select_related('player').first()
+        context['player_registration_application'] = application
         user = self.request.user
+        context['dashboard_mode'] = resolve_dashboard_mode(user)
+        context['is_guest_dashboard'] = context['dashboard_mode'] == DashboardMode.GUEST
+        context['is_trial_dashboard'] = context['dashboard_mode'] == DashboardMode.TRIAL
+        context['is_player_dashboard'] = context['dashboard_mode'] == DashboardMode.PLAYER
+        context['is_organization_dashboard'] = context['dashboard_mode'] in {
+            DashboardMode.ORGANIZATION, DashboardMode.PLATFORM,
+        }
+        context['trial_invitations'] = (
+            application.trial_invitations.select_related('trial', 'trial__tenant')
+            if application else []
+        )
         
         tenant_id = self.request.session.get('active_tenant_id')
         tenant = None
@@ -491,6 +525,214 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             context['active_players'] = 0
 
         return context
+
+
+class RoleWorkspaceView(LoginRequiredMixin, TemplateView):
+    template_name = 'accounts/role_workspace.html'
+    workspace_config = {
+        'tenant-admin': ('TENANT_ADMIN', 'Tenant Admin Workspace', 'roles.manage'),
+        'scorer': ('SCORER', 'Scorer Workspace', 'scoring.manage'),
+        'team-manager': ('TEAM_MANAGER', 'Team Manager Workspace', 'teams.manage'),
+        'auction-manager': ('AUCTION_MANAGER', 'Auction Manager Workspace', 'auctions.manage'),
+        'venue-manager': ('VENUE_MANAGER', 'Venue Manager Workspace', 'venues.manage'),
+        'viewer': ('VIEWER', 'Viewer Workspace', 'tournaments.read'),
+    }
+
+    def dispatch(self, request, *args, **kwargs):
+        self.workspace_key = kwargs['workspace']
+        if self.workspace_key not in self.workspace_config:
+            raise Http404('Workspace not found.')
+        _, _, capability = self.workspace_config[self.workspace_key]
+        from apps.accounts.policies import require_capability
+        require_capability(request, capability)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        role_code, title, capability = self.workspace_config[self.workspace_key]
+        tenant = self.request.tenant
+        context.update({
+            'workspace_key': self.workspace_key,
+            'role_code': role_code,
+            'workspace_title': title,
+            'required_capability': capability,
+            'current_tenant': tenant,
+            'memberships': UserTenant.objects.filter(
+                tenant=tenant, is_active=True
+            ).select_related('user', 'role') if tenant else [],
+        })
+        if tenant:
+            from apps.auctions.models import AuctionEvent
+            from apps.tournaments.models import TournamentMatch
+            from apps.venues.models import Venue
+            context['workspace_stats'] = {
+                'players': PlayerProfile.objects.filter(tenant=tenant, is_deleted=False).count(),
+                'teams': Team.objects.filter(tenant=tenant, is_deleted=False).count(),
+                'tournaments': Tournament.objects.filter(tenant=tenant, is_deleted=False).count(),
+                'matches': TournamentMatch.objects.filter(tournament__tenant=tenant, is_deleted=False).count(),
+                'venues': Venue.objects.filter(tenant=tenant, is_deleted=False).count(),
+                'auctions': AuctionEvent.objects.filter(tournament__tenant=tenant, is_deleted=False).count(),
+            }
+        else:
+            context['workspace_stats'] = {}
+        return context
+
+
+class PlayerTrialListView(
+    LoginRequiredMixin, CapabilityRequiredMixin, ListView
+):
+    required_capability = 'tournaments.manage'
+    model = PlayerTrialEvent
+    template_name = 'accounts/player_trial_list.html'
+    context_object_name = 'trials'
+
+    def get_queryset(self):
+        return PlayerTrialEvent.objects.filter(
+            tenant=self.request.tenant
+        ).prefetch_related('invitations')
+
+
+class PlayerTrialCreateView(
+    LoginRequiredMixin, CapabilityRequiredMixin, CreateView
+):
+    required_capability = 'tournaments.manage'
+    model = PlayerTrialEvent
+    form_class = PlayerTrialEventForm
+    template_name = 'accounts/player_trial_form.html'
+
+    def form_valid(self, form):
+        form.instance.tenant = self.request.tenant
+        form.instance.created_by = self.request.user
+        messages.success(self.request, 'Player trial created.')
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse_lazy('accounts:player-trial-list')
+
+
+class PlayerTrialDetailView(
+    LoginRequiredMixin, CapabilityRequiredMixin, DetailView
+):
+    required_capability = 'tournaments.manage'
+    model = PlayerTrialEvent
+    template_name = 'accounts/player_trial_detail.html'
+    context_object_name = 'trial'
+
+    def get_queryset(self):
+        return PlayerTrialEvent.objects.filter(tenant=self.request.tenant)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['invitations'] = self.object.invitations.select_related(
+            'application', 'application__user', 'application__player'
+        )
+        context['eligible_applications'] = PlayerRegistrationApplication.objects.filter(
+            payment_status=PlayerRegistrationApplication.PaymentStatus.VERIFIED,
+        ).exclude(trial_invitations__trial=self.object)
+        return context
+
+
+class PlayerTrialInviteView(
+    LoginRequiredMixin, CapabilityRequiredMixin, View
+):
+    required_capability = 'tournaments.manage'
+
+    def post(self, request, pk):
+        trial = get_object_or_404(
+            PlayerTrialEvent, pk=pk, tenant=request.tenant
+        )
+        application = get_object_or_404(
+            PlayerRegistrationApplication,
+            pk=request.POST.get('application'),
+            payment_status=PlayerRegistrationApplication.PaymentStatus.VERIFIED,
+        )
+        invitation, created = PlayerTrialInvitation.objects.get_or_create(
+            application=application,
+            trial=trial,
+            defaults={
+                'status': PlayerRegistrationApplication.TrialStatus.INVITED,
+                'scheduled_at': trial.starts_at,
+            },
+        )
+        if created:
+            application.trial_status = (
+                PlayerRegistrationApplication.TrialStatus.INVITED
+            )
+            application.save(update_fields=['trial_status', 'updated_at'])
+            messages.success(request, 'Player invited to the trial.')
+        else:
+            messages.info(request, 'Player is already invited to this trial.')
+        return redirect('accounts:player-trial-detail', pk=trial.pk)
+
+
+class PlayerTrialEvaluationView(
+    LoginRequiredMixin, CapabilityRequiredMixin, FormView
+):
+    required_capability = 'tournaments.manage'
+    form_class = PlayerTrialEvaluationForm
+    template_name = 'accounts/player_trial_evaluation.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.invitation = get_object_or_404(
+            PlayerTrialInvitation.objects.select_related(
+                'trial', 'application', 'application__player', 'application__user'
+            ),
+            pk=kwargs['pk'],
+            trial__tenant=request.tenant,
+        )
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['invitation'] = self.invitation
+        return context
+
+    def form_valid(self, form):
+        apply_trial_decision(
+            self.invitation, self.request.user, form.cleaned_data
+        )
+        messages.success(self.request, 'Trial evaluation saved.')
+        return redirect(
+            'accounts:player-trial-detail', pk=self.invitation.trial_id
+        )
+
+
+class PlayerTrialStatusView(
+    LoginRequiredMixin, CapabilityRequiredMixin, View
+):
+    required_capability = 'tournaments.manage'
+    allowed_statuses = {
+        PlayerRegistrationApplication.TrialStatus.SCHEDULED,
+        PlayerRegistrationApplication.TrialStatus.ATTENDED,
+    }
+
+    def post(self, request, pk, status):
+        invitation = get_object_or_404(
+            PlayerTrialInvitation.objects.select_related('trial', 'application'),
+            pk=pk,
+            trial__tenant=request.tenant,
+        )
+        if status not in self.allowed_statuses:
+            messages.error(request, 'Invalid trial status transition.')
+            return redirect(
+                'accounts:player-trial-detail', pk=invitation.trial_id
+            )
+        invitation.status = status
+        if status == PlayerRegistrationApplication.TrialStatus.SCHEDULED:
+            invitation.scheduled_at = invitation.scheduled_at or invitation.trial.starts_at
+        else:
+            invitation.attended_at = timezone.now()
+        invitation.save(
+            update_fields=['status', 'scheduled_at', 'attended_at', 'updated_at']
+        )
+        invitation.application.trial_status = status
+        invitation.application.save(
+            update_fields=['trial_status', 'updated_at']
+        )
+        messages.success(request, 'Candidate trial status updated.')
+        return redirect(
+            'accounts:player-trial-detail', pk=invitation.trial_id
+        )
 
 
 # ── Profile ─────────────────────────────────────────────────────────────

@@ -8,6 +8,7 @@ from django.views import View
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 
 from apps.accounts.models import Tenant
+from apps.accounts.saas import validate_tenant_plan_limit
 from apps.teams.models import Team, TeamSeason, TeamSquad, TeamStaff
 from apps.teams.forms import TeamForm, TeamSeasonForm, TeamSquadForm, TeamStaffForm
 from apps.accounts.policies import CapabilityRequiredMixin
@@ -149,6 +150,11 @@ class TeamCreateView(LoginRequiredMixin, CapabilityRequiredMixin, CreateView):
             messages.error(self.request, "No active organization context found.")
             from django.shortcuts import redirect
             return redirect('accounts:dashboard')
+        try:
+            validate_tenant_plan_limit(tenant, 'teams')
+        except ValueError as exc:
+            messages.error(self.request, str(exc))
+            return redirect('teams:team-list')
 
         form.instance.tenant = tenant
         messages.success(self.request, "Team registered successfully.")

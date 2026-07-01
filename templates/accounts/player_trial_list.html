@@ -1,0 +1,18 @@
+{% extends "accounts/base.html" %}
+{% block title %}Player Trials - RNT MPL{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div><h2 class="fw-bold mb-1">Player Trials</h2><p class="text-secondary mb-0">Invite payment-verified candidates and record selections.</p></div>
+  <a class="btn btn-primary" href="{% url 'accounts:player-trial-create' %}">Create Trial</a>
+</div>
+<div class="row g-3">
+{% for trial in trials %}
+<div class="col-lg-4"><a class="card premium-card text-decoration-none h-100" href="{% url 'accounts:player-trial-detail' trial.pk %}"><div class="card-body">
+  <span class="badge bg-primary-subtle text-primary">{{ trial.get_status_display }}</span>
+  <h4 class="fw-bold mt-3">{{ trial.title }}</h4>
+  <p class="text-secondary">{{ trial.starts_at|date:"d M Y, h:i A" }}<br>{{ trial.venue }}</p>
+  <strong>{{ trial.invitations.count }} candidates</strong>
+</div></a></div>
+{% empty %}<div class="col-12"><div class="card"><div class="card-body text-center p-5">No trials created yet.</div></div></div>{% endfor %}
+</div>
+{% endblock %}

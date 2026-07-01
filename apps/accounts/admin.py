@@ -6,8 +6,16 @@ from django.db.models import Count
 
 from apps.accounts.models import (
     LoginHistory,
+    NotificationOutbox,
+    OrganizerApplication,
+    OrganizationPlan,
+    OrganizationSubscription,
     OTPVerification,
     PermissionMatrix,
+    PaymentLedger,
+    PaymentReceipt,
+    PaymentReconciliation,
+    PaymentWebhookEvent,
     Role,
     Tenant,
     User,
@@ -17,6 +25,13 @@ from apps.accounts.models import (
     UserDocument,
     UserSession,
     UserTenant,
+)
+from apps.accounts.saas import (
+    mark_payment_refunded,
+    process_notification_outbox,
+    reactivate_subscription,
+    review_organizer_application,
+    suspend_subscription,
 )
 
 
@@ -65,6 +80,140 @@ class UserAdmin(DjangoUserAdmin):
             color, obj.get_user_type_display()
         )
     user_type_badge.short_description = 'Type'
+
+
+@admin.register(OrganizationPlan)
+class OrganizationPlanAdmin(admin.ModelAdmin):
+    list_display = (
+        'name', 'code', 'price', 'billing_cycle', 'max_tournaments',
+        'max_teams', 'max_players', 'max_venues', 'max_users', 'is_active',
+    )
+    list_editable = ('is_active',)
+    list_filter = ('billing_cycle', 'is_active')
+    search_fields = ('name', 'code', 'description')
+    prepopulated_fields = {'code': ('name',)}
+
+
+@admin.register(OrganizerApplication)
+class OrganizerApplicationAdmin(admin.ModelAdmin):
+    list_display = (
+        'organization_name', 'plan', 'contact_person', 'email',
+        'tenant_type', 'status', 'tenant', 'created_at',
+    )
+    list_filter = ('status', 'tenant_type', 'plan', 'created_at')
+    search_fields = ('organization_name', 'contact_person', 'email', 'phone')
+    readonly_fields = (
+        'user', 'tenant', 'reviewed_by', 'reviewed_at', 'provisioned_at',
+        'created_at', 'updated_at',
+    )
+    actions = ('approve_and_provision', 'reject_applications')
+
+    @admin.action(description='Approve and provision selected organizer applications')
+    def approve_and_provision(self, request, queryset):
+        for application in queryset:
+            if application.status in {
+                OrganizerApplication.Status.SUBMITTED,
+                OrganizerApplication.Status.UNDER_REVIEW,
+                OrganizerApplication.Status.APPROVED,
+            }:
+                review_organizer_application(application, request.user, True)
+
+    @admin.action(description='Reject selected organizer applications')
+    def reject_applications(self, request, queryset):
+        for application in queryset:
+            if application.status in {
+                OrganizerApplication.Status.SUBMITTED,
+                OrganizerApplication.Status.UNDER_REVIEW,
+            }:
+                review_organizer_application(application, request.user, False)
+
+
+@admin.register(OrganizationSubscription)
+class OrganizationSubscriptionAdmin(admin.ModelAdmin):
+    list_display = (
+        'tenant', 'plan', 'status', 'current_period_start',
+        'current_period_end', 'cancel_at_period_end',
+    )
+    list_filter = ('status', 'plan', 'cancel_at_period_end')
+    search_fields = ('tenant__name', 'organizer_application__organization_name')
+    readonly_fields = ('created_at', 'updated_at', 'suspended_at')
+    actions = ('suspend_selected', 'reactivate_selected')
+
+    @admin.action(description='Suspend selected subscriptions')
+    def suspend_selected(self, request, queryset):
+        for subscription in queryset:
+            if subscription.status != OrganizationSubscription.Status.SUSPENDED:
+                suspend_subscription(subscription, reason='Suspended by platform admin.')
+
+    @admin.action(description='Reactivate selected subscriptions')
+    def reactivate_selected(self, request, queryset):
+        for subscription in queryset:
+            if subscription.status == OrganizationSubscription.Status.SUSPENDED:
+                reactivate_subscription(subscription)
+
+
+@admin.register(PaymentLedger)
+class PaymentLedgerAdmin(admin.ModelAdmin):
+    list_display = (
+        'reference', 'purpose', 'provider', 'status', 'user',
+        'tenant', 'amount', 'created_at',
+    )
+    list_filter = ('purpose', 'provider', 'status', 'created_at')
+    search_fields = (
+        'reference', 'gateway_order_id', 'gateway_payment_id',
+        'user__email', 'tenant__name',
+    )
+    readonly_fields = ('created_at', 'updated_at', 'gateway_payload')
+    actions = ('mark_refunded',)
+
+    @admin.action(description='Mark selected payments as refunded')
+    def mark_refunded(self, request, queryset):
+        for payment in queryset:
+            if payment.status == PaymentLedger.Status.PAID:
+                mark_payment_refunded(payment, reason='Refund recorded by platform admin.')
+
+
+@admin.register(PaymentReceipt)
+class PaymentReceiptAdmin(admin.ModelAdmin):
+    list_display = (
+        'receipt_number', 'billed_to_name', 'billed_to_email',
+        'amount', 'currency', 'issued_at',
+    )
+    list_filter = ('currency', 'issued_at')
+    search_fields = ('receipt_number', 'billed_to_name', 'billed_to_email', 'payment__reference')
+    readonly_fields = tuple(field.name for field in PaymentReceipt._meta.fields)
+
+
+@admin.register(PaymentReconciliation)
+class PaymentReconciliationAdmin(admin.ModelAdmin):
+    list_display = (
+        'payment', 'status', 'gateway_amount', 'gateway_currency',
+        'reconciled_at',
+    )
+    list_filter = ('status', 'gateway_currency', 'reconciled_at')
+    search_fields = ('payment__reference', 'payment__gateway_payment_id', 'notes')
+    readonly_fields = ('created_at', 'updated_at', 'gateway_payload')
+
+
+@admin.register(PaymentWebhookEvent)
+class PaymentWebhookEventAdmin(admin.ModelAdmin):
+    list_display = ('provider', 'event_type', 'event_id', 'is_valid', 'processed_at', 'created_at')
+    list_filter = ('provider', 'event_type', 'is_valid', 'processed_at')
+    search_fields = ('event_id', 'event_type')
+    readonly_fields = ('payload', 'signature', 'processed_at', 'processing_error', 'created_at', 'updated_at')
+
+
+@admin.register(NotificationOutbox)
+class NotificationOutboxAdmin(admin.ModelAdmin):
+    list_display = ('event_type', 'channel', 'recipient', 'status', 'attempts', 'created_at')
+    list_filter = ('event_type', 'channel', 'status', 'created_at')
+    search_fields = ('recipient', 'subject', 'body')
+    readonly_fields = ('payload', 'created_at', 'updated_at', 'sent_at')
+    actions = ('process_pending_notifications',)
+
+    @admin.action(description='Process pending notification outbox')
+    def process_pending_notifications(self, request, queryset):
+        process_notification_outbox(limit=queryset.count() or 25)
 
 
 @admin.register(Tenant)

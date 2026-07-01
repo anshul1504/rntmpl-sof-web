@@ -51,6 +51,7 @@ drf-spectacular>=0.28
 gunicorn>=23.0
 
 # Payments
+razorpay>=1.4
 stripe>=11.0
 
 # Utils

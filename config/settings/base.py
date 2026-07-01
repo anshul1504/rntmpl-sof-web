@@ -4,8 +4,22 @@ Enterprise Cricket Ecosystem Platform - Base Settings
 import os
 from pathlib import Path
 from datetime import timedelta
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+load_dotenv(BASE_DIR / '.env', override=False)
+
+if os.environ.get('DJANGO_SETTINGS_MODULE') != 'config.settings.production':
+    docker_env = BASE_DIR / '.env.docker'
+    if docker_env.exists():
+        for raw_line in docker_env.read_text(encoding='utf-8').splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith('#') or '=' not in line:
+                continue
+            key, value = line.split('=', 1)
+            if key.startswith(('EMAIL_', 'DEFAULT_FROM_EMAIL', 'SERVER_EMAIL', 'RAZORPAY_')):
+                os.environ.setdefault(key, value)
 
 SECRET_KEY = os.environ.get(
     'DJANGO_SECRET_KEY',
@@ -450,6 +464,7 @@ EMAIL_BACKEND = os.environ.get(
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() in ('true', '1')
+EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'False').lower() in ('true', '1')
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.environ.get(
@@ -459,6 +474,7 @@ DEFAULT_FROM_EMAIL = os.environ.get(
 # Razorpay
 RAZORPAY_KEY_ID = os.environ.get('RAZORPAY_KEY_ID', '')
 RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET', '')
+RAZORPAY_CURRENCY = os.environ.get('RAZORPAY_CURRENCY', 'INR')
 
 # Stripe
 STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY', '')

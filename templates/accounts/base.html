@@ -31,19 +31,19 @@
         }
         input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus, input[type="tel"]:focus, input[type="date"]:focus, select:focus, textarea:focus, .form-control:focus {
             border-color: var(--gold-primary) !important;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
+            box-shadow: 0 0 0 3px rgba(255, 201, 40, 0.18) !important;
             outline: none !important;
         }
         :root {
-            --bg-color: #f0f2f5;
-            --sidebar-bg: #ffffff;
+            --bg-color: #f8f5ed;
+            --sidebar-bg: #0d0d0d;
             --card-bg: #ffffff;
-            --card-hover-bg: #f8f9fb;
-            --border-color: rgba(0, 0, 0, 0.08);
-            --border-color-hover: rgba(37, 99, 235, 0.3);
-            --gold-primary: #2563eb;
-            --gold-secondary: #1d4ed8;
-            --gold-light: rgba(37, 99, 235, 0.08);
+            --card-hover-bg: #fffaf0;
+            --border-color: rgba(13, 13, 13, 0.1);
+            --border-color-hover: rgba(255, 201, 40, 0.55);
+            --gold-primary: #ffc928;
+            --gold-secondary: #d99b00;
+            --gold-light: rgba(255, 201, 40, 0.14);
             --text-primary: #1a1d23;
             --text-secondary: #6b7280;
             --sidebar-width: 260px;
@@ -52,9 +52,34 @@
 
 
 
+        .btn-primary {
+            --bs-btn-color: #111;
+            --bs-btn-bg: var(--gold-primary);
+            --bs-btn-border-color: var(--gold-primary);
+            --bs-btn-hover-color: var(--gold-primary);
+            --bs-btn-hover-bg: #111;
+            --bs-btn-hover-border-color: #111;
+            --bs-btn-active-color: #111;
+            --bs-btn-active-bg: var(--gold-secondary);
+            --bs-btn-active-border-color: var(--gold-secondary);
+        }
+        .btn-outline-primary {
+            --bs-btn-color: #111;
+            --bs-btn-border-color: var(--gold-secondary);
+            --bs-btn-hover-color: #111;
+            --bs-btn-hover-bg: var(--gold-primary);
+            --bs-btn-hover-border-color: var(--gold-primary);
+            --bs-btn-active-color: #111;
+            --bs-btn-active-bg: var(--gold-secondary);
+            --bs-btn-active-border-color: var(--gold-secondary);
+        }
+        .text-primary { color: var(--gold-secondary) !important; }
+        .bg-primary { background-color: var(--gold-primary) !important; }
+        .bg-primary-subtle { background-color: var(--gold-light) !important; }
+        .border-primary { border-color: var(--gold-primary) !important; }
         /* Adaptive Dropdown & Card Styles */
         .dropdown-menu {
-            background-color: var(--sidebar-bg) !important;
+            background-color: var(--card-bg) !important;
             border-color: var(--border-color) !important;
         }
         .dropdown-item {
@@ -96,8 +121,8 @@
         .app-sidebar {
             width: var(--sidebar-width);
             background-color: var(--sidebar-bg);
-            border-right: 1px solid var(--border-color);
-            box-shadow: 8px 0 30px rgba(15, 23, 42, 0.06);
+            border-right: 1px solid rgba(255, 201, 40, 0.18);
+            box-shadow: 8px 0 30px rgba(0, 0, 0, 0.16);
             display: flex;
             flex-direction: column;
             position: fixed;
@@ -110,7 +135,7 @@
 
         .sidebar-brand {
             padding: 20px 22px;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid rgba(255, 201, 40, 0.18);
             display: flex;
             align-items: center;
             gap: 14px;
@@ -132,9 +157,9 @@
             color: var(--gold-primary);
             letter-spacing: 1.5px;
             white-space: nowrap;
-            text-shadow: 0 0 20px rgba(37, 99, 235, 0.3);
+            text-shadow: 0 0 20px rgba(255, 201, 40, 0.25);
         }
-        .brand-subtitle { display:block; font-size:9px; color:var(--text-secondary); letter-spacing:1.2px; font-weight:600; }
+        .brand-subtitle { display:block; font-size:9px; color:#b8b8b8; letter-spacing:1.2px; font-weight:600; }
 
         /* Menu Section */
         .sidebar-menu {
@@ -203,7 +228,7 @@
 
         .menu-link.active {
             color: var(--gold-primary) !important;
-            background: linear-gradient(90deg, rgba(37, 99, 235, 0.08) 0%, rgba(37, 99, 235, 0.02) 100%) !important;
+            background: linear-gradient(90deg, rgba(255, 201, 40, 0.18) 0%, rgba(255, 201, 40, 0.05) 100%) !important;
             font-weight: 600;
             box-shadow: none;
         }
@@ -225,7 +250,7 @@
         /* Bottom User Profile */
         .sidebar-bottom {
             padding: 16px 20px;
-            border-top: 1px solid var(--border-color);
+            border-top: 1px solid rgba(255, 201, 40, 0.18);
             display: flex;
             align-items: center;
             gap: 12px;
@@ -237,8 +262,8 @@
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background: linear-gradient(135deg, rgba(37, 99, 235, 0.15), rgba(37, 99, 235, 0.05));
-            border: 2px solid rgba(37, 99, 235, 0.4);
+            background: linear-gradient(135deg, rgba(255, 201, 40, 0.2), rgba(255, 201, 40, 0.06));
+            border: 2px solid rgba(255, 201, 40, 0.42);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -257,7 +282,7 @@
         .profile-name {
             font-weight: 600;
             font-size: 13px;
-            color: var(--text-primary);
+            color: #fff;
             white-space: nowrap;
             text-overflow: ellipsis;
             overflow: hidden;
@@ -285,8 +310,8 @@
         /* Top Header Styling */
         .main-header {
             height: 70px;
-            background-color: var(--sidebar-bg);
-            border-bottom: 1px solid var(--border-color);
+            background-color: var(--card-bg);
+            border-bottom: 1px solid rgba(255, 201, 40, 0.18);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -318,7 +343,7 @@
         .search-bar input:focus {
             background-color: rgba(255, 255, 255, 0.08);
             border-color: var(--gold-primary);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+            box-shadow: 0 0 0 3px rgba(255, 201, 40, 0.18);
             outline: none;
         }
 
@@ -363,7 +388,7 @@
             height: 8px;
             border-radius: 50%;
             background-color: var(--gold-primary);
-            box-shadow: 0 0 10px rgba(37, 99, 235, 0.6);
+            box-shadow: 0 0 10px rgba(255, 201, 40, 0.55);
         }
 
         /* Content Area Container */
@@ -390,7 +415,7 @@
 
         .premium-card .card-header {
             background-color: transparent;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid rgba(255, 201, 40, 0.18);
             padding: 16px 20px;
         }
 
@@ -436,7 +461,7 @@
             height: 48px;
             border-radius: 10px;
             background-color: var(--gold-light);
-            border: 1px solid rgba(37, 99, 235, 0.15);
+            border: 1px solid rgba(255, 201, 40, 0.35);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -474,7 +499,7 @@
         /* Footer */
         .main-footer {
             background-color: var(--sidebar-bg);
-            border-top: 1px solid var(--border-color);
+            border-top: 1px solid rgba(255, 201, 40, 0.18);
             padding: 16px 30px;
             text-align: center;
             color: var(--text-secondary);
@@ -589,6 +614,7 @@
                         </a>
                     </li>
                 </ul>
+                {% if current_tenant %}
                 <div class="menu-title">Tournament Operations</div>
                 <ul class="menu-list">
                     <li class="menu-item">
@@ -629,6 +655,8 @@
                         </a>
                     </li>
                     {% if can_manage_roles %}<li class="menu-item"><a href="{% url 'accounts:role-staff' %}" class="menu-link {% if 'roles-staff' in request.path or '/members/' in request.path or '/roles/' in request.path %}active{% endif %}"><i class="bi bi-people-fill"></i><span>Roles & Staff</span></a></li>{% endif %}
+                    {% if can_manage_tournaments %}<li class="menu-item"><a href="{% url 'accounts:player-trial-list' %}" class="menu-link {% if 'player-trial' in request.path %}active{% endif %}"><i class="bi bi-clipboard2-check"></i><span>Player Trials</span></a></li>{% endif %}
+                    {% endif %}
                     <li class="menu-item">
                         <a href="{% url 'accounts:logout' %}" class="menu-link" style="color: #e86c75;">
                             <i class="bi bi-box-arrow-right" style="color: #e86c75;"></i>
@@ -688,7 +716,7 @@
                                 {{ user.full_name|slice:":1"|default:"U" }}
                             </div>
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end" style="background-color: var(--sidebar-bg); border-color: var(--border-color);">
+                        <ul class="dropdown-menu dropdown-menu-end" style="background-color: var(--card-bg); border-color: var(--border-color);">
                             <li><a class="dropdown-item" href="{% url 'accounts:profile' %}"><i class="bi bi-person me-2"></i>Profile</a></li>
                             <li><a class="dropdown-item" href="{% url 'accounts:profile-edit' %}"><i class="bi bi-pencil me-2"></i>Edit Profile</a></li>
                             {% if current_tenant %}
@@ -754,3 +782,4 @@
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>
+
